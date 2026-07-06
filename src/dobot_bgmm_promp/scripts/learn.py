@@ -1,0 +1,181 @@
+from __future__ import annotations
+
+import argparse
+import csv
+from collections.abc import Callable
+from pathlib import Path
+
+from dobot_bgmm_promp.gmr_primitives import (
+    BGMMGMRProMP,
+    GMMGMRDMP,
+    GMMGMRSegmentedDMP,
+    IncGMMGMRDMP,
+)
+from dobot_bgmm_promp.io import load_config, load_demonstrations, project_path, save_model
+from dobot_bgmm_promp.metrics import evaluate_reference_trajectory, format_trajectory_metrics
+from dobot_bgmm_promp.plotting import plot_model_comparison, plot_trajectories
+
+
+ALGORITHM_BUILDERS: dict[str, tuple[str, Callable[..., object]]] = {
+    "gmm_gmr_dmp": ("GMM+GMR+DMP", GMMGMRDMP),
+    "inc_gmm_gmr_dmp": ("Inc-GMM+GMR+DMP", IncGMMGMRDMP),
+    "gmm_gmr_segmented_dmp": ("GMM+GMR+Segmented DMP", GMMGMRSegmentedDMP),
+    "bgmm_gmr_promp": ("BGMM+GMR+ProMP", BGMMGMRProMP),
+}
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Learn GMM/GMR movement primitive models.")
+    parser.add_argument("--config", default="configs/default.yaml")
+    args = parser.parse_args()
+
+    config = load_config(args.config)
+    demos = load_demonstrations(
+        config["data"]["demos_dir"],
+        time_column=config["data"]["time_column"],
+        coordinate_columns=config["data"]["coordinate_columns"],
+        gripper_column=config["data"].get("gripper_column"),
+    )
+
+    algorithm = config["model"].get("algorithm", "compare")
+    if algorithm != "compare" and algorithm not in ALGORITHM_BUILDERS:
+        options = ", ".join([*ALGORITHM_BUILDERS, "compare"])
+        raise ValueError(f"model.algorithm must be one of: {options}")
+
+    algorithm_names = list(ALGORITHM_BUILDERS) if algorithm == "compare" else [algorithm]
+    trained_models = {}
+    metric_rows = []
+    plot_config = config.get("plot", {})
+
+    for algorithm_name in algorithm_names:
+        label, builder = ALGORITHM_BUILDERS[algorithm_name]
+        model_config = config[algorithm_name]
+        model = builder(**model_config.get("params", {})).fit(demos)
+        save_model(model, model_config["output_path"])
+        trained_models[algorithm_name] = model
+
+        samples = model.sample_trajectories(min(8, len(demos)))
+        output_path = model_config.get(
+            "plot_output_path",
+            plot_config.get(f"{algorithm_name}_output_path", plot_config.get("output_path")),
+        )
+        plot_trajectories(
+            demos,
+            model.mean_trajectory(),
+            samples,
+            project_path(output_path),
+            title=f"{label}: demonstrations vs learned trajectory",
+        )
+        print(f"Saved {label} model: {model_config['output_path']}")
+        print(f"Saved {label} plot: {output_path}")
+        metrics = evaluate_reference_trajectory(demos, model.mean_trajectory())
+        print(format_trajectory_metrics(f"{label} mean", metrics))
+        metric_rows.append(
+            _metrics_row(
+                algorithm_name=algorithm_name,
+                label=label,
+                metrics=metrics,
+                model_path=model_config["output_path"],
+                plot_path=output_path,
+            )
+        )
+
+    if algorithm == "compare":
+        place_positions = config["coppeliasim"]["place_positions"]
+        comparison = {
+            label: model.trajectory_for_place(1, place_positions)
+            for label, model in trained_models.items()
+        }
+        output_path = plot_config.get("comparison_output_path", "models/trajectory_comparison.png")
+        plot_model_comparison(
+            demos,
+            comparison,
+            project_path(output_path),
+            title="Four GMM-GMR movement primitive algorithms",
+        )
+        print(f"Saved comparison plot: {output_path}")
+
+    csv_path = project_path("models/algorithm_metrics.csv")
+    md_path = project_path("models/algorithm_metrics.md")
+    _write_metric_tables(metric_rows, csv_path, md_path)
+    print(f"Saved metrics table: {csv_path}")
+    print(f"Saved metrics summary: {md_path}")
+
+
+def _metrics_row(
+    *,
+    algorithm_name: str,
+    label: str,
+    metrics,
+    model_path: str,
+    plot_path: str,
+) -> dict[str, str]:
+    dim_names = ["X", "Y", "Z", "Gripper"]
+    row = {
+        "Algorithm ID": algorithm_name,
+        "Algorithm": label,
+        "Pearson Mean": _format_number(metrics.mean_pearson),
+        "RMSE Mean": _format_number(metrics.mean_rmse),
+        "Model File": model_path,
+        "Trajectory Plot": plot_path,
+    }
+    for index, dim in enumerate(dim_names):
+        row[f"Pearson {dim}"] = _format_number(metrics.pearson[index])
+        row[f"RMSE {dim}"] = _format_number(metrics.rmse[index])
+    return row
+
+
+def _write_metric_tables(rows: list[dict[str, str]], csv_path: Path, md_path: Path) -> None:
+    if not rows:
+        return
+
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [
+        "Algorithm ID",
+        "Algorithm",
+        "Pearson X",
+        "Pearson Y",
+        "Pearson Z",
+        "Pearson Gripper",
+        "Pearson Mean",
+        "RMSE X",
+        "RMSE Y",
+        "RMSE Z",
+        "RMSE Gripper",
+        "RMSE Mean",
+        "Model File",
+        "Trajectory Plot",
+    ]
+    with csv_path.open("w", newline="", encoding="utf-8-sig") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    lines = [
+        "# Algorithm Metrics",
+        "",
+        "| Algorithm | Pearson Mean | RMSE Mean | Pearson X | Pearson Y | Pearson Z | Pearson Gripper | RMSE X | RMSE Y | RMSE Z | RMSE Gripper |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for row in rows:
+        lines.append(
+            "| {Algorithm} | {Pearson Mean} | {RMSE Mean} | {Pearson X} | {Pearson Y} | "
+            "{Pearson Z} | {Pearson Gripper} | {RMSE X} | {RMSE Y} | {RMSE Z} | "
+            "{RMSE Gripper} |".format(**row)
+        )
+    lines.extend(
+        [
+            "",
+            "Generated by `python -m dobot_bgmm_promp.scripts.learn --config configs/default.yaml`.",
+            "",
+        ]
+    )
+    md_path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _format_number(value: float) -> str:
+    return "nan" if value != value else f"{value:.4f}"
+
+
+if __name__ == "__main__":
+    main()

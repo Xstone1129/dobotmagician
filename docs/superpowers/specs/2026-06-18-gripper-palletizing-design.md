@@ -1,118 +1,121 @@
-# Simple Gripper Palletizing — Design Spec
+# Simple Gripper Palletizing Design Spec
 
 **Date**: 2026-06-18
-**Status**: Approved design, awaiting implementation
+**Status**: Implemented
 
 ## Motivation
 
-The current project (dobot-magician-bgmm-promp) jumped directly from algorithm
-development to full-robot-arm CoppeliaSim simulation, making it impossible to
-validate the BGMM-ProMP algorithm independently. The existing demo_01.csv is
-invalid — only the timestamp changes, xyz coordinates are constant.
+The project originally jumped directly from algorithm validation to a full
+Dobot Magician CoppeliaSim scene. That made failures hard to separate: IK,
+robot setup, target reading, and BGMM-ProMP learning were all coupled.
 
-This spec describes a simplified simulation environment: a free-floating gripper
-in 3D space, performing palletizing (pick-and-place) trajectories. No robot arm,
-no inverse kinematics. This isolation lets us validate the algorithm end-to-end
-before re-integrating with the full robot model.
+This scene isolates the algorithm validation step. It uses a free-moving
+end-effector gripper, a small block, one pick point, and a 2x3 pallet area.
+There is no full robot arm and no IK.
 
-## CoppeliaSim Scene (`scenes/gripper_palletizing.ttt`)
+## CoppeliaSim Scene
 
-A minimal scene with only these objects:
+`scenes/gripper_palletizing.ttt` contains:
 
-- `/GripperBase` — dummy, position-controlled via `sim.setObjectPosition`
-- `/GripperSignal` — marker, open/close via `sim.setFloatSignal("gripper", 0.0/1.0)`
-- `/PickPoint` — fixed pickup location marker (small opaque sphere)
-- `/Place_01` through `/Place_06` — six placement markers in a 2x3 grid
+- `/GripperBase`: dummy moved by Cartesian playback.
+- Dobot Magician two-finger gripper end effector copied from the user's desktop
+  Dobot scene and parented under `/GripperBase`.
+- `/GripperBase/.../GripperJawLeftJoint` and `GripperJawRightJoint`: prismatic
+  joints driven from the learned gripper signal.
+- `/GripperBase/.../GripperTip`: attach frame used when carrying the block.
+- `/PalletBlock`: 14 mm block.
+- `/PickPoint`: pickup marker.
+- `/Place_01` through `/Place_06`: six placement markers in a 2x3 grid.
+- `/Table`: small visual reference surface.
 
-No joints, no scripts, no IK elements. The scene is purely a visualization
-surface for the Python client to drive.
+The scene does not include the Dobot arm links, IK targets, or full robot
+control logic.
 
 ## Data Format
 
-CSV changes from `t, x, y, z` to `t, x, y, z, gripper`. The `gripper` column
-is a continuous signal: 0.0 = open, 1.0 = closed. The algorithm treats it as the
-4th dimension — no code changes needed in `BGMMProMP`.
+Demonstration CSV files use `t,x,y,z,gripper`.
+
+The first three dimensions are the free Cartesian position of `/GripperBase`.
+The `gripper` column is continuous:
+
+- `0.0`: open
+- `1.0`: closed
+
+`BGMMProMP` treats the gripper value as the fourth trajectory dimension.
 
 ## Demo Path Structure
 
-Each complete palletizing trajectory follows this waypoint sequence:
+Each trajectory follows:
 
-| Phase      | Gripper | Description                        |
-|------------|---------|-----------------------------------|
-| home       | 0.0     | Start position, gripper open      |
-| pre-pick   | 0.0     | 5cm above pick point              |
-| pick       | 0->1    | At pick point, close gripper      |
-| post-pick  | 1.0     | Lift 5cm above pick point         |
-| pre-place  | 1.0     | Travel 5cm above target place     |
-| place      | 1->0    | At place point, open gripper      |
-| post-place | 0.0     | Lift 5cm above place point        |
-| home       | 0.0     | Return to start                   |
+| Phase | Gripper | Description |
+| --- | --- | --- |
+| home | 0.0 | Start above the scene |
+| pre-pick | 0.0 | Above pick point |
+| pick | 0.0 to 1.0 | Close on the block |
+| post-pick | 1.0 | Lift block |
+| pre-place | 1.0 | Move above selected slot |
+| place | 1.0 to 0.0 | Release block |
+| post-place | 0.0 | Lift away |
+| home | 0.0 | Return home |
 
-Home position: (0, 0, 0.15)
-Pick point: centered relative to grid
-Grid: 2 rows x 3 columns, 40 mm spacing in X and Y, constant Z
+Geometry:
 
-## Synthetic Data Generation (New Script)
+- Home: `(0.0, 0.0, 0.15)`
+- Pick: `(0.20, -0.16, 0.006)`
+- Grid: 2 rows x 3 columns, 40 mm spacing, constant Z
+- Block: 14 mm wide, so it fits visually inside the 40 mm slots
 
-`src/dobot_bgmm_promp/scripts/generate_palletizing_demos.py`
+## Synthetic Data Generation
 
-- Defines the grid geometry and waypoint positions
-- For each of the 6 place positions, generates 5 variants
-- Per-variant: adds +/-2 mm uniform random noise to (x, y) waypoints
-- Interpolates via `scipy.interpolate.CubicSpline` over phase [0, 1]
-- Outputs to `data/demos/demo_01.csv` through `demo_30.csv`
-- Total: 30 demonstration CSV files
+`src/dobot_bgmm_promp/scripts/generate_palletizing_demos.py` generates:
 
-## CoppeliaSim Client Changes
+- 6 placement positions
+- 5 variants per position
+- +/-2 mm XY noise for movement waypoints
+- Smooth cubic interpolation over phase
+- 30 CSV demonstrations in `data/demos`
+
+## Scene Generation
+
+`src/dobot_bgmm_promp/scripts/create_gripper_palletizing_scene.py` opens:
+
+`C:\Users\Administrator\Desktop\dobotmagician.before_ik_backup.ttt`
+
+It extracts the gripper end-effector subtree, removes the rest of the robot,
+adds the block and markers, and saves:
+
+`scenes/gripper_palletizing.ttt`
+
+## Playback
 
 `src/dobot_bgmm_promp/coppeliasim_client.py`:
 
-- `play_cartesian_trajectory` detects trajectory dimensionality:
-  - 3 columns: existing behaviour (position only)
-  - 4 columns: position + gripper signal per step
-- On 4D input, calls `sim.setFloatSignal("gripper", g)` alongside
-  `sim.setObjectPosition`
-- Backward compatible — existing 3D use cases unaffected
+- Moves `/GripperBase` through Cartesian trajectory points.
+- Sends `sim.setFloatSignal("gripper", value)`.
+- Drives the left/right prismatic gripper joints from the same gripper value.
+- Attaches `/PalletBlock` to `GripperTip` after the close threshold.
+- Releases `/PalletBlock` at the selected slot after the open threshold.
 
-## Config Changes
+Pickup/release is deterministic instead of contact-physics based. This keeps
+the algorithm validation stable while still making the object visibly move with
+the gripper.
 
-`configs/default.yaml`:
-
-- Add `data.gripper_column: gripper` (optional, default null)
-- Update `coppeliasim.target_path` to `/GripperBase`
-- Simplify coordinate scale/offset for the new scene
-
-## I/O Changes
-
-`src/dobot_bgmm_promp/io.py`:
-
-- `load_demonstrations` reads the `gripper` column when
-  `config["data"].get("gripper_column")` is set
-- Demos become 4D arrays [time, 4] when gripper is present
+`dobot-play --place-index N` selects one of the six placement slots. The script
+chooses the learned BGMM component whose placement section is nearest to that
+slot.
 
 ## Validation Criteria
 
-1. `generate_palletizing_demos.py` produces 30 valid CSV files with varying xyz
-2. `dobot-learn` trains successfully, plot shows multi-modal trajectories
-3. With CoppeliaSim open and scene loaded, `dobot-play` moves the GripperBase
-   smoothly and sets gripper signal at correct waypoints
+1. `dobot-create-gripper-scene` produces a scene with no full robot arm.
+2. The scene contains the visible Dobot two-finger end effector.
+3. `dobot-learn` trains successfully on the generated 4D demonstrations.
+4. `dobot-play --place-index 1..6` animates the gripper, carries the block, and
+   releases it at the selected slot.
 
 ## Non-Goals
 
-- No IK solving
-- No full robot arm model
-- No joint-level control
-- No real hardware interface
-- No gripper finger animation (joint drivers deferred to full-robot phase)
-- The existing target-reading issue with the full-robot .ttt is not addressed here
-
-## File Changes Summary
-
-| Action | File |
-|--------|------|
-| New    | `scenes/gripper_palletizing.ttt` |
-| New    | `src/dobot_bgmm_promp/scripts/generate_palletizing_demos.py` |
-| Edit   | `configs/default.yaml` |
-| Edit   | `src/dobot_bgmm_promp/coppeliasim_client.py` |
-| Edit   | `src/dobot_bgmm_promp/io.py` |
-| Delete | `data/demos/demo_01.csv` (optional, stale data) |
+- No full Dobot arm in this validation scene.
+- No IK solving.
+- No hardware interface.
+- No unstable contact-physics gripping.
+- The full-scene target-coordinate reading issue is not addressed here.
