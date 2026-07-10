@@ -18,7 +18,8 @@ LIFT_Z = 0.07
 
 N_TIME_STEPS = 150
 N_PER_POSE = 5
-NOISE_XY = 0.002
+NOISE_XY = 0.02
+NOISE_Z = 0.02
 
 
 def _waypoints_for_place(rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
@@ -30,16 +31,19 @@ def _waypoints_for_place(rng: np.random.Generator) -> tuple[np.ndarray, np.ndarr
 
     pk = jitter(PICK[:2])
     pl = jitter(PLACE)
+    pick_z = PICK[2] + rng.uniform(-NOISE_Z, NOISE_Z)
+    place_z = PLACE_Z + rng.uniform(-NOISE_Z, NOISE_Z)
+    lift_z = LIFT_Z + rng.uniform(-NOISE_Z, NOISE_Z)
 
     pos = np.array(
         [
             HOME,
-            (pk[0], pk[1], LIFT_Z),
-            (pk[0], pk[1], PICK[2]),
-            (pk[0], pk[1], LIFT_Z),
-            (pl[0], pl[1], LIFT_Z),
-            (pl[0], pl[1], PLACE_Z),
-            (pl[0], pl[1], LIFT_Z),
+            (pk[0], pk[1], lift_z),
+            (pk[0], pk[1], pick_z),
+            (pk[0], pk[1], lift_z),
+            (pl[0], pl[1], lift_z),
+            (pl[0], pl[1], place_z),
+            (pl[0], pl[1], lift_z),
             HOME,
         ],
         dtype=float,

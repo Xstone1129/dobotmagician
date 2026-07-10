@@ -1,5 +1,5 @@
 ﻿Algorithm ID,Algorithm,Pearson X,Pearson Y,Pearson Z,Pearson Gripper,Pearson Mean,RMSE X,RMSE Y,RMSE Z,RMSE Gripper,RMSE Mean,Model File,Trajectory Plot
-gmm_gmr_dmp,GMM+GMR+DMP,0.9085,0.8823,0.9356,0.9865,0.9282,0.0455,0.0242,0.0139,0.0756,0.0398,models/gmm_gmr_dmp.joblib,models/learned_trajectory_gmm_gmr_dmp.png
-inc_gmm_gmr_dmp,Inc-GMM+GMR+DMP,0.9022,0.8844,0.9441,0.9867,0.9294,0.0464,0.0236,0.0129,0.0751,0.0395,models/inc_gmm_gmr_dmp.joblib,models/learned_trajectory_inc_gmm_gmr_dmp.png
-gmm_gmr_segmented_dmp,GMM+GMR+Segmented DMP,0.9955,0.9948,0.9988,0.9993,0.9971,0.0093,0.0046,0.0018,0.0168,0.0081,models/gmm_gmr_segmented_dmp.joblib,models/learned_trajectory_gmm_gmr_segmented_dmp.png
-bgmm_gmr_promp,BGMM+GMR+ProMP,0.9854,0.9803,0.9959,0.9974,0.9898,0.0183,0.0102,0.0044,0.0368,0.0175,models/bgmm_gmr_promp.joblib,models/learned_trajectory_bgmm_gmr_promp.png
+gmm_gmr_dmp,GMM+GMR+DMP,0.9229,0.9056,0.9416,0.9865,0.9392,0.0455,0.0250,0.0150,0.0754,0.0403,models/gmm_gmr_dmp.joblib,models/learned_trajectory_gmm_gmr_dmp.png
+inc_gmm_gmr_dmp,Inc-GMM+GMR+DMP,0.9179,0.9091,0.9449,0.9868,0.9397,0.0455,0.0245,0.0145,0.0748,0.0398,models/inc_gmm_gmr_dmp.joblib,models/learned_trajectory_inc_gmm_gmr_dmp.png
+gmm_gmr_segmented_dmp,GMM+GMR+Segmented DMP,0.9946,0.9894,0.9906,0.9988,0.9934,0.0138,0.0111,0.0084,0.0222,0.0139,models/gmm_gmr_segmented_dmp.joblib,models/learned_trajectory_gmm_gmr_segmented_dmp.png
+bgmm_gmr_promp,BGMM+GMR+ProMP,0.9850,0.9753,0.9892,0.9974,0.9867,0.0207,0.0144,0.0091,0.0375,0.0205,models/bgmm_gmr_promp.joblib,models/learned_trajectory_bgmm_gmr_promp.png

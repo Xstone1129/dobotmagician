@@ -77,9 +77,19 @@ class DiscreteDMP:
             )
             dy = dy + ddy * dt
             y = y + dy * dt
-        trajectory[-1] = self.goal_
+        trajectory = self._smooth_goal_transition(trajectory)
         if self.n_dims is not None and self.n_dims >= 4:
             trajectory[:, 3] = np.clip(trajectory[:, 3], 0.0, 1.0)
+        return trajectory
+
+    def _smooth_goal_transition(self, trajectory: np.ndarray, window: int = 8) -> np.ndarray:
+        """Blend the tail to the goal instead of snapping only the final point."""
+        if len(trajectory) <= 1:
+            return trajectory
+        window = min(window, len(trajectory))
+        weights = np.linspace(0.0, 1.0, window)[:, None]
+        trajectory[-window:] = (1.0 - weights) * trajectory[-window:] + weights * self.goal_
+        trajectory[-1] = self.goal_
         return trajectory
 
     def _fit_forcing_terms(self, trajectory: np.ndarray) -> np.ndarray:

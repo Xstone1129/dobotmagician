@@ -6,7 +6,7 @@ data:
 
 model:
   algorithm: compare
-  active_algorithm: gmm_gmr_dmp
+  active_algorithm: bgmm_gmr_promp
 
 plot:
   output_path: models/learned_trajectory.png
