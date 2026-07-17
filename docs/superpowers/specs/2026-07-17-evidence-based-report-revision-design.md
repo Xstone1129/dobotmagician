@@ -43,10 +43,10 @@
 
 - GMM+GMR+DMP：8 个 GMM 分量，15 个 DMP 基函数。
 - Inc-GMM+GMR+DMP：增量阈值 `inc_lam=0.25`，50 个 DMP 基函数。
-- GMM+GMR+Segmented DMP：8 个 GMM 分量，4 个等长片段，每段 35 个 DMP 基函数。
+- GMM+GMR+Segmented DMP：8 个 GMM 分量，4 个近等长片段，每段 35 个 DMP 基函数。
 - BGMM+GMR+ProMP：8 个候选 BGMM 分量，25 个高斯基函数，基函数宽度 0.08。
 
-报告需明确当前分段实现是将 GMR 参考轨迹等长分为 4 段，并非论文中基于碰撞、RRT 路径或任务事件确定分段点的完整方法。
+报告需明确当前分段实现使用 `numpy.array_split` 将 150 点 GMR 参考轨迹分为 4 个近等长片段，实际长度为 38、38、37、37 点，并非论文中基于碰撞、RRT 路径或任务事件确定分段点的完整方法。
 
 ### 3.3 当前结果图
 
@@ -93,9 +93,9 @@ python -m dobot_bgmm_promp.scripts.generate_palletizing_demos `
 
 使用源码驱动的流程图展示：
 
-`active_algorithm -> 加载 joblib -> 得到 150x4 轨迹 -> 设置 GripperBase 位置 -> 设置夹爪关节 -> gripper >= 0.65 时绑定物块 -> 轨迹后半段且 gripper <= 0.35 时释放 -> 返回 HOME`
+`active_algorithm -> 加载 joblib -> 得到 150x4 轨迹 -> 设置 GripperBase 位置 -> 设置夹爪关节 -> gripper >= 0.65 时绑定物块 -> 轨迹后半段且 gripper <= 0.35 时释放 -> 播放至模型轨迹末端`
 
-图中显著标注“阈值触发 + setObjectParent；无接触力、距离或碰撞判断”。
+图中显著标注“阈值触发 + setObjectParent；无接触力、距离或碰撞判断”。回放代码没有独立的“返回 HOME”命令；只有模型轨迹末端本身和视频画面能够证明时，图注才可描述为“返回 HOME”。
 
 ### 图 3-1 四种算法结构对照
 
@@ -103,14 +103,14 @@ python -m dobot_bgmm_promp.scripts.generate_palletizing_demos `
 
 1. 经典 GMM -> GMR -> 单 DMP。
 2. Inc-GMM -> GMR -> 单 DMP。
-3. 经典 GMM -> GMR -> 4 段等长 DMP。
+3. 经典 GMM -> GMR -> 4 段近等长 DMP。
 4. BGMM -> GMR -> 确定性 ProMP 基函数重构。
 
 图中标注当前关键参数，并在 ProMP 分支注明“未实现权重概率分布的独立随机采样”。
 
 ### 图 5-1 用户提供的当前模型真实回放关键帧
 
-用户从自己录制的当前模型回放视频中截取 6 至 8 帧，优先选择 `gmm_gmr_segmented_dmp` 的完整回放。建议阶段如下：
+用户从自己录制的当前模型回放视频中截取 6 至 8 帧。当前配置的 `active_algorithm` 是 `bgmm_gmr_promp`，因此不能默认视频属于分段 DMP；配套 `frames.json` 必须记录并由用户确认实际模型 ID。建议选择下列可直接观察的阶段：
 
 1. HOME 初始状态。
 2. 到达取物点上方。
@@ -119,9 +119,9 @@ python -m dobot_bgmm_promp.scripts.generate_palletizing_demos `
 5. 搬运至 `Place_01` 上方。
 6. 打开夹爪、释放物块。
 7. 离开放置点。
-8. 返回 HOME。
+8. 播放至轨迹末端；只有画面确实证明时才标为“返回 HOME”。
 
-截图统一使用 PNG，建议按 `frame-01-home.png` 至 `frame-08-return-home.png` 命名，并放入实施计划指定的证据目录。画面采用相同裁剪比例，避免窗口或字幕位置在各帧间跳动。若视频本身未记录轨迹索引、归一化相位或精确 `gripper` 值，图注只标动作阶段和可直接观察的状态，不反推或编造数值。截图必须来自当前实际回放，不得由图像生成模型制作。
+截图统一使用 PNG，采用 `frame-01.png` 至 `frame-08.png` 这类不预设动作结论的文件名，并放入实施计划指定的证据目录。画面采用相同裁剪比例，避免窗口或字幕位置在各帧间跳动。若视频本身未记录轨迹索引、归一化相位或精确 `gripper` 值，图注只标动作阶段和可直接观察的状态，不反推或编造数值。截图必须来自当前实际回放，不得由图像生成模型制作。
 
 在用户提供这组截图前，工作副本只完成插入位置、正文引用和图注模板，不插入空白占位图，也不把该工作副本称为最终完成版。用户提供截图后再完成图 5-1 的排版和最终逐页 QA。
 
@@ -140,7 +140,7 @@ python -m dobot_bgmm_promp.scripts.generate_palletizing_demos `
 | 论文内容 | 当前项目状态 |
 | --- | --- |
 | 轨迹平滑与时间对齐 | 使用自然三次样条生成等长合成数据；未实现论文的 MAF+DTW 预处理链路 |
-| 分段 DMP | 实现 4 段等长 DMP 对照方法 |
+| 分段 DMP | 使用 `numpy.array_split` 实现 4 段近等长 DMP 对照方法；150 点实际分为 38、38、37、37 点 |
 | RRT 障碍路径与分段点确定 | 未实现 |
 | 障碍物检测、碰撞检查和安全距离 | 未实现 |
 | 完整机械臂、IK 与关节控制 | 未实现 |
@@ -174,7 +174,7 @@ python -m dobot_bgmm_promp.scripts.generate_palletizing_demos `
 - 当前各算法参数。
 - 精确的 8 条 Demo 生成命令和空目录警告。
 - 新增报告图片的来源与复现方式。
-- “当前分段 DMP 为等长 4 段”“没有避障、IK、碰撞检测和实机验证”等边界。
+- “当前分段 DMP 为 4 个近等长片段”“没有避障、IK、碰撞检测和实机验证”等边界。
 
 手册继续承担下一届接手用途，图片生成/截图步骤必须可重复，而不是只保留成品。
 
