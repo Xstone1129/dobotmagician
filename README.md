@@ -76,3 +76,28 @@ python -m dobot_bgmm_promp.scripts.play_coppeliasim --config configs/default.yam
 
 The default config contains one place point. `--place-index 1` is still accepted
 for compatibility, but no other place index is configured.
+
+## Full Dobot Magician With Suction Cup
+
+The original `scenes/gripper_palletizing.ttt` and `configs/default.yaml` stay in
+place as the free-moving gripper baseline. The full four-axis arm is an
+independent, editable setup:
+
+```powershell
+python -m dobot_bgmm_promp.scripts.generate_suction_turn_demos
+python -m dobot_bgmm_promp.scripts.create_suction_arm_scene --config configs/suction_arm.yaml
+python -m dobot_bgmm_promp.scripts.learn --config configs/suction_arm.yaml
+
+# Step 4: open the generated scene and keep CoppeliaSim running, then replay:
+Start-Process "C:\Program Files\CoppeliaRobotics\CoppeliaSimEdu\coppeliaSim.exe" `
+  "scenes\dobot_magician_suction.ttt"
+python -m dobot_bgmm_promp.scripts.play_coppeliasim --config configs/suction_arm.yaml
+```
+
+`scenes/dobot_magician_suction.ttt` is built from CoppeliaSim's supplied Dobot
+Magician and suction-pad models. Its examples pick behind the base, lift,
+rotate across the base, and place on the opposite side. Adjust the source
+scene, pick/place coordinates, or scene output in `configs/suction_arm.yaml`.
+
+Every training run now saves the fitted mixture and the GMR conditional mean
+before the final DMP/ProMP output in `models/.../intermediate/`.

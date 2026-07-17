@@ -182,7 +182,7 @@ python -m dobot_bgmm_promp.scripts.generate_palletizing_demos `
 
 ### 8.1 代码和数据验证
 
-- `python -m pytest -q -p no:cacheprovider` 输出 `5 passed`。
+- 原算法基线使用 `python -m pytest tests/test_bgmm_promp.py -q -p no:cacheprovider`，输出 `5 passed`。新增证据图与报告 QA 测试后，全套 `python -m pytest -q -p no:cacheprovider` 也必须全部通过，并在验收记录中写明本轮实际用例数，不能继续把全套测试总数写死为 5。
 - 从 `models/algorithm_metrics.csv` 自动核对 Word 和 Markdown 中的指标值。
 - 核对 Word 嵌入的五张结果图与当前 `models/` 文件哈希或像素内容一致。
 - 用户提供的回放截图记录视频对应的模型和录制日期；只有视频本身或运行记录能够证明时，才记录配置、时间或关键帧索引。

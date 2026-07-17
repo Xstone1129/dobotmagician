@@ -28,7 +28,10 @@ dev = [
 dobot-learn = "dobot_bgmm_promp.scripts.learn:main"
 dobot-play = "dobot_bgmm_promp.scripts.play_coppeliasim:main"
 dobot-record = "dobot_bgmm_promp.scripts.record_coppeliasim:main"
+dobot-debug-follow = "dobot_bgmm_promp.scripts.debug_coppeliasim_follow:main"
 dobot-create-gripper-scene = "dobot_bgmm_promp.scripts.create_gripper_palletizing_scene:main"
+dobot-create-suction-arm-scene = "dobot_bgmm_promp.scripts.create_suction_arm_scene:main"
+dobot-generate-suction-demos = "dobot_bgmm_promp.scripts.generate_suction_turn_demos:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

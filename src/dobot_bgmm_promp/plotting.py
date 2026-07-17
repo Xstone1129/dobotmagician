@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.patches import Ellipse
 
 
 def plot_trajectories(
@@ -98,6 +102,72 @@ def plot_model_comparison(
     fig.tight_layout(rect=(0, 0, 1, 0.96))
     fig.savefig(output, dpi=160)
     plt.close(fig)
+
+
+def plot_gmm_components(
+    points: np.ndarray,
+    means: np.ndarray,
+    covariances: np.ndarray,
+    weights: np.ndarray,
+    output_path: str | Path,
+    *,
+    title: str,
+) -> None:
+    """Save the fitted mixture distribution before GMR or primitive rollout."""
+
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    points = np.asarray(points, dtype=float)
+    means = np.asarray(means, dtype=float)
+    covariances = np.asarray(covariances, dtype=float)
+    weights = np.asarray(weights, dtype=float)
+    dims = min(3, points.shape[1] - 1)
+    fig, axes = plt.subplots(dims, 1, figsize=(10, max(3.8, 2.7 * dims)), sharex=True)
+    if dims == 1:
+        axes = [axes]
+    colors = plt.cm.tab10(np.arange(len(means)) % 10)
+    for dim, axis in enumerate(axes, start=1):
+        axis.scatter(points[:, 0], points[:, dim], s=5, alpha=0.13, color="#4c566a", label="demo points")
+        for index, (mean, covariance, weight) in enumerate(zip(means, covariances, weights)):
+            _add_component_ellipse(axis, mean, covariance, dim, colors[index], float(weight))
+        axis.set_ylabel(_dimension_ylabel(_dimension_names(points.shape[1] - 1)[dim - 1]))
+        axis.grid(True, alpha=0.25)
+    axes[0].legend(loc="best", fontsize=8)
+    axes[-1].set_xlabel("normalized time")
+    fig.suptitle(title, fontsize=14, fontweight="bold")
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    fig.savefig(output, dpi=160)
+    plt.close(fig)
+
+
+def plot_gmr_regression(
+    demos: list[np.ndarray],
+    gmr_trajectory: np.ndarray,
+    output_path: str | Path,
+    *,
+    title: str,
+) -> None:
+    """Save the conditional GMR mean before DMP or ProMP reconstruction."""
+
+    plot_trajectories(demos, gmr_trajectory, None, output_path, title=title)
+
+
+def _add_component_ellipse(axis, mean, covariance, output_dim: int, color, weight: float) -> None:
+    covariance_2d = np.asarray(covariance)[np.ix_([0, output_dim], [0, output_dim])]
+    values, vectors = np.linalg.eigh(covariance_2d)
+    values = np.maximum(values, 0.0)
+    angle = np.degrees(np.arctan2(vectors[1, 1], vectors[0, 1]))
+    ellipse = Ellipse(
+        xy=(mean[0], mean[output_dim]),
+        width=4.0 * np.sqrt(values[0]),
+        height=4.0 * np.sqrt(values[1]),
+        angle=angle,
+        facecolor="none",
+        edgecolor=color,
+        linewidth=1.3,
+        alpha=max(0.25, min(0.9, weight * 4.0)),
+    )
+    axis.add_patch(ellipse)
 
 
 def _dimension_names(dims: int) -> list[str]:

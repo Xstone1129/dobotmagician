@@ -5,6 +5,8 @@ import csv
 from collections.abc import Callable
 from pathlib import Path
 
+import numpy as np
+
 from dobot_bgmm_promp.gmr_primitives import (
     BGMMGMRProMP,
     GMMGMRDMP,
@@ -13,7 +15,13 @@ from dobot_bgmm_promp.gmr_primitives import (
 )
 from dobot_bgmm_promp.io import load_config, load_demonstrations, project_path, save_model
 from dobot_bgmm_promp.metrics import evaluate_reference_trajectory, format_trajectory_metrics
-from dobot_bgmm_promp.plotting import plot_model_comparison, plot_trajectories
+from dobot_bgmm_promp.model_selection import normalize_demo
+from dobot_bgmm_promp.plotting import (
+    plot_gmm_components,
+    plot_gmr_regression,
+    plot_model_comparison,
+    plot_trajectories,
+)
 
 
 ALGORITHM_BUILDERS: dict[str, tuple[str, Callable[..., object]]] = {
@@ -65,6 +73,13 @@ def main() -> None:
             samples,
             project_path(output_path),
             title=f"{label}: demonstrations vs learned trajectory",
+        )
+        _save_intermediate_figures(
+            model,
+            demos,
+            algorithm_name,
+            label,
+            project_path(plot_config.get("intermediate_output_dir", "models/intermediate")),
         )
         print(f"Saved {label} model: {model_config['output_path']}")
         print(f"Saved {label} plot: {output_path}")
@@ -123,6 +138,32 @@ def _metrics_row(
         row[f"Pearson {dim}"] = _format_number(metrics.pearson[index])
         row[f"RMSE {dim}"] = _format_number(metrics.rmse[index])
     return row
+
+
+def _save_intermediate_figures(model, demos, algorithm_name: str, label: str, output_dir: Path) -> None:
+    """Persist the observable GMM and GMR stages, not only the final primitive."""
+
+    if model.gmr_trajectory_ is None:
+        return
+    means, covariances, weights = model.mixture_parameters()
+    n_steps = model.gmr_trajectory_.shape[0]
+    phase = np.linspace(0.0, 1.0, n_steps)
+    normalized = [normalize_demo(demo, n_steps) for demo in demos]
+    points = np.vstack([np.column_stack([phase, demo]) for demo in normalized])
+    plot_gmm_components(
+        points,
+        means,
+        covariances,
+        weights,
+        output_dir / f"{algorithm_name}_gmm.png",
+        title=f"{label}: fitted GMM components before GMR",
+    )
+    plot_gmr_regression(
+        demos,
+        model.gmr_trajectory_,
+        output_dir / f"{algorithm_name}_gmr.png",
+        title=f"{label}: GMR conditional mean before movement primitive",
+    )
 
 
 def _write_metric_tables(rows: list[dict[str, str]], csv_path: Path, md_path: Path) -> None:

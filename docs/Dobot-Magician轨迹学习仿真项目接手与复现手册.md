@@ -9,28 +9,30 @@
 - 使用 8 条合成示教轨迹训练四种 GMM-GMR 运动基元算法。
 - 每条轨迹包含 150 个时刻，训练维度为 `x、y、z、gripper`。
 - 自动保存四个模型、四张单算法轨迹图、一张算法对比图和两种格式的指标表。
-- 在 CoppeliaSim 简化场景中驱动自由移动夹爪，完成单个放置点的抓取、搬运、释放和回到起点。
+- 在 CoppeliaSim 简化场景中直接驱动自由移动夹爪，执行单个放置点的抓取、搬运和释放，并播放至所选模型轨迹的最后一个点。
 - 可以在配置文件中切换需要回放的算法。
 - 当前自动化测试共 5 项，已全部通过。
 
 ### 1.2 当前没有实现
 
-- 没有在真实 Dobot Magician 机械臂上运行。
-- 没有完整机械臂模型、逆运动学（IK）和关节轨迹控制。
+- 没有在真实 Dobot Magician 机械臂上运行或验证。
+- 没有完整机械臂模型、逆运动学（IK）和关节轨迹控制，也没有验证机械臂可达性。
 - 没有 2×3 多点码垛；当前只配置了 1 个放置点。
-- 没有避障、碰撞检测和运动规划。
-- 抓取不是接触物理仿真，而是达到夹爪阈值后把物块绑定到夹爪。
+- 没有 RRT 或其他运动规划、避障和碰撞检测。
+- 没有接触抓取验证；当前抓取是达到夹爪阈值后把物块绑定到夹爪，不模拟接触力、摩擦或夹持失败。
 - 多数模型的“采样轨迹”目前是均值轨迹的复制，不代表完整的随机概率采样。
 
-> **重要：** 本项目当前应描述为“基于 CoppeliaSim 简化夹爪场景的单点码垛轨迹学习仿真”，不能描述成已经完成实机码垛。
+> **重要：** 本项目当前应描述为“基于 CoppeliaSim 简化自由夹爪场景的单点码垛轨迹学习仿真”。论文、PPT 或预期方案中的完整机械臂、避障和实机目标，不能直接写成当前仓库已经实现的功能。
 
 ### 1.3 成功复现时应该看到什么
 
 1. `pytest` 显示 `5 passed`。
 2. `models/` 中存在四个 `.joblib` 模型。
 3. `models/` 中存在四张单算法图和 `trajectory_comparison.png`。
-4. `models/algorithm_metrics.csv` 中分段 DMP 的当前结果最好：Pearson 均值为 `0.9934`，RMSE 均值为 `0.0139`。
-5. 打开仿真场景并执行回放后，夹爪从起点移动到物块，夹住物块，移动到 `Place_01`，释放物块，再返回起点。
+4. `models/algorithm_metrics.csv` 中，分段 DMP 的 Pearson 均值最高（`0.9934`），Inc-GMM+GMR+DMP 的 RMSE 均值最低（`0.0123`）。
+5. 打开仿真场景并执行回放后，夹爪沿所选模型的 150 点轨迹完成抓取、搬运和释放；脚本播放到模型轨迹末端后停止仿真。
+
+以上结论分别以 [`configs/default.yaml`](../configs/default.yaml)、[`models/algorithm_metrics.csv`](../models/algorithm_metrics.csv)、[`src/dobot_bgmm_promp/scripts/play_coppeliasim.py`](../src/dobot_bgmm_promp/scripts/play_coppeliasim.py) 和 [`src/dobot_bgmm_promp/coppeliasim_client.py`](../src/dobot_bgmm_promp/coppeliasim_client.py) 为证据。回放代码没有在轨迹结束后额外发送“返回 HOME”命令；即使模型末端接近 HOME，也只能表述为播放到了模型轨迹末端。
 
 ## 2. 用最少理论理解四种算法
 
@@ -63,6 +65,8 @@ GMR 的条件均值计算位于 [`src/dobot_bgmm_promp/gmr.py`](../src/dobot_bgm
 
 DMP 实现在 [`src/dobot_bgmm_promp/dmp.py`](../src/dobot_bgmm_promp/dmp.py)，分段组合逻辑在 [`src/dobot_bgmm_promp/gmr_primitives.py`](../src/dobot_bgmm_promp/gmr_primitives.py) 的 `_segmented_dmp_rollout` 中。
 
+当前分段 DMP 先把 150 点 GMR 参考轨迹交给 `numpy.array_split(reference, 4)`。由于 150 不能被 4 整除，四段实际长度是 `38/38/37/37`，不是四个完全等长的 37.5 点片段；每段独立拟合后再按原顺序拼接。
+
 ### 2.4 增量 GMM、BGMM 和 ProMP
 
 - **增量 GMM**：逐个读取样本，根据距离决定更新已有分量还是新建分量，适合研究在线学习。当前简化实现位于 [`src/dobot_bgmm_promp/incremental_gmm.py`](../src/dobot_bgmm_promp/incremental_gmm.py)。
@@ -87,6 +91,19 @@ sample_trajectories(n_samples)
 component_trajectories()
 trajectory_for_place(place_index, place_positions)
 ```
+
+### 2.6 当前训练参数快照
+
+下表抄录自 [`configs/default.yaml`](../configs/default.yaml)，用于保证报告文字、复现实验和实际运行参数一致。四种算法都输出 150 个时刻的轨迹。
+
+| 算法 | 混合模型参数 | 运动基元参数 | 其他关键参数 |
+| --- | --- | --- | --- |
+| GMM+GMR+DMP | `n_components=8`，`covariance_type=full`，`reg_covar=1e-6`，`random_state=7` | `dmp_basis=15`，`dmp_alpha_z=25.0`，`dmp_beta_z=6.25`，`dmp_alpha_s=1.0` | `ridge_lambda=1e-6` |
+| Inc-GMM+GMR+DMP | `inc_lam=0.25` | `dmp_basis=50`，`dmp_alpha_z=25.0`，`dmp_beta_z=6.25`，`dmp_alpha_s=1.0` | `ridge_lambda=1e-6` |
+| GMM+GMR+Segmented DMP | `n_components=8`，`covariance_type=full`，`reg_covar=1e-6`，`random_state=7` | `dmp_basis=35`，`dmp_alpha_z=25.0`，`dmp_beta_z=6.25`，`dmp_alpha_s=4.0` | `n_segments=4`（实际 `38/38/37/37` 点），`ridge_lambda=1e-6` |
+| BGMM+GMR+ProMP | `n_components=8`，`covariance_type=full`，`reg_covar=1e-6`，`random_state=7` | `promp_basis=25`，`promp_basis_width=0.08` | `ridge_lambda=1e-6` |
+
+当前回放选择为 `model.active_algorithm: bgmm_gmr_promp`。`model.algorithm: compare` 控制训练时依次运行四种算法，二者不要混淆。
 
 ## 3. 项目目录地图
 
@@ -218,12 +235,12 @@ Import-Csv models/algorithm_metrics.csv |
 
 | 算法 | Pearson 均值 | RMSE 均值 |
 | --- | ---: | ---: |
-| GMM+GMR+DMP | 0.9392 | 0.0403 |
-| Inc-GMM+GMR+DMP | 0.9397 | 0.0398 |
+| GMM+GMR+DMP | 0.9871 | 0.0187 |
+| Inc-GMM+GMR+DMP | 0.9927 | 0.0123 |
 | GMM+GMR+Segmented DMP | 0.9934 | 0.0139 |
 | BGMM+GMR+ProMP | 0.9867 | 0.0205 |
 
-Pearson 越接近 `1` 表示曲线变化趋势越相似；RMSE 越小表示数值误差越小。当前数据上，分段 DMP 最好，BGMM+GMR+ProMP 次之。
+Pearson 越接近 `1` 表示曲线变化趋势越相似；RMSE 越小表示数值误差越小。当前数据上，分段 DMP 的 Pearson 均值最高，Inc-GMM+GMR+DMP 的 RMSE 均值最低，因此不能笼统地把某一种方法写成两个指标都最优。这里的数值来自当前 [`models/algorithm_metrics.csv`](../models/algorithm_metrics.csv)，重新训练或更换数据后必须同步更新，不能从旧报告抄写。
 
 ### 5.3 打开仿真场景
 
@@ -270,9 +287,11 @@ python -m dobot_bgmm_promp.scripts.play_coppeliasim `
 4. 按 150 个轨迹点移动夹爪。
 5. `gripper` 达到抓取阈值时闭合夹爪并绑定物块。
 6. 轨迹后半段 `gripper` 低于释放阈值时解除绑定并释放物块。
-7. 夹爪回到起点并停止仿真。
+7. 播放完模型轨迹的最后一点后停止仿真。
 
 如果你已经手动启动仿真，可以添加 `--no-start`，但第一次复现不建议这样做。
+
+> **边界说明：** `play_coppeliasim.py` 只把模型给出的轨迹传给 `play_cartesian_trajectory()`。客户端按顺序遍历这些点，循环结束后没有独立的 HOME 轨迹或 HOME 控制命令。因此回放结果应写成“到达模型轨迹末端”，不能仅凭合成 Demo 的最后一个关键点名为 HOME，就声称程序额外执行了返回 HOME。
 
 ## 6. 数据格式与配置文件
 
@@ -341,7 +360,7 @@ python -m dobot_bgmm_promp.scripts.play_coppeliasim `
 ```powershell
 python -m dobot_bgmm_promp.scripts.generate_palletizing_demos `
   --output-dir .codex_tmp/reproduction-demos `
-  --n-per-pose 5 `
+  --n-per-pose 8 `
   --seed 42
 ```
 
@@ -352,7 +371,7 @@ Get-ChildItem .codex_tmp/reproduction-demos -Filter *.csv
 Get-Content .codex_tmp/reproduction-demos/demo_01.csv -TotalCount 3
 ```
 
-> **警告：** 生成器采用追加编号，不会自动清空目录。对同一目录重复运行会继续生成 `demo_06.csv`、`demo_07.csv` 等文件，导致训练样本数量变化。
+> **警告：** 当前论文基线是 8 条 Demo，必须写入一个空目录。生成器采用追加编号，不会自动清空目录；对同一目录重复运行会继续追加文件，导致训练样本数量变化，不能再视为同一组基线。
 
 ### 6.4 CoppeliaSim 关键对象
 
@@ -409,7 +428,9 @@ Get-Content .codex_tmp/reproduction-demos/demo_01.csv -TotalCount 3
 - 根据 `active_algorithm` 加载模型；
 - 选择 `place-index` 对应轨迹；
 - 建立 CoppeliaSim 连接；
-- 把轨迹交给 `CoppeliaDobotClient` 回放。
+- 把轨迹交给 `CoppeliaDobotClient` 回放至轨迹末端。
+
+当前配置的 `active_algorithm` 是 `bgmm_gmr_promp`。脚本不会在回放结束后再规划或执行一段返回 HOME 的轨迹。
 
 ### 7.3 `coppeliasim_client.py`
 
@@ -465,15 +486,60 @@ t,x,y,z
 - 分段 DMP 更贴近示教轨迹的局部转折和夹爪切换；
 - BGMM+ProMP 整体平滑，但起点和终点附近存在一定偏差。
 
-### 8.3 答辩视频
+### 8.3 复现报告中的系统与仿真证据图
 
-老师答辩材料目录中保留了四段回放视频：
+报告新增的图 2-1、图 2-3 和图 3-1不是手工拼凑的通用示意图，而是由当前配置和源码生成。执行：
 
-```text
-C:\Users\Administrator\OneDrive\文档\科教\Xstone答辩材料2026_07_06\
+```powershell
+python -m dobot_bgmm_promp.scripts.generate_report_figures `
+  --manifest reports/figures/manifest.json `
+  diagrams `
+  --config configs/default.yaml `
+  --output-dir reports/figures
 ```
 
-分别对应四种算法，可用于核对正常仿真效果。视频是结果证据，不是训练输入。
+正常情况下会生成：
+
+- `figure-2-1-project-data-flow.png`：项目架构与数据流；
+- `figure-2-3-playback-state-machine.png`：回放控制链路与抓放状态机；
+- `figure-3-1-algorithm-structures.png`：四种算法结构和当前关键参数；
+- 同名 SVG 文件和 `manifest.json`：记录图片哈希、尺寸、来源文件与源码符号。
+
+图 2-2 使用真实 CoppeliaSim 窗口截图和只读 Remote API 对象清单组合。场景已打开且 Remote API 可连接时，先执行：
+
+```powershell
+python -m dobot_bgmm_promp.scripts.export_coppeliasim_inventory `
+  --config configs/default.yaml `
+  --output reports/evidence/coppeliasim/object-inventory.json
+```
+
+再把真实窗口截图保存为 `reports/evidence/coppeliasim/scene-overview.png`，执行：
+
+```powershell
+python -m dobot_bgmm_promp.scripts.generate_report_figures `
+  --manifest reports/figures/manifest.json `
+  scene `
+  --scene-image reports/evidence/coppeliasim/scene-overview.png `
+  --inventory reports/evidence/coppeliasim/object-inventory.json `
+  --output reports/figures/figure-2-2-coppeliasim-scene-and-objects.png
+```
+
+对象导出脚本只调用 `getObject`、`getObjectAlias` 和 `getObjectPosition`，不移动对象、不启动仿真，也不把生成式图片当作实验场景。
+
+### 8.4 从真实回放视频提取 6–8 帧证据图
+
+当前用户已经录制了模型在 CoppeliaSim 中的真实回放视频，后续由用户从该视频截图。收到截图前，不生成渲染图、示意图或空白占位图代替真实回放证据，也不把本节写成“已完成截图”。
+
+建议按以下步骤接入报告：
+
+1. 先由视频录制者确认视频对应的算法 ID 和录制日期，不得仅根据当前 `active_algorithm` 反推旧视频使用的模型。
+2. 从同一段连续回放中选择 6–8 帧，优先覆盖：初始状态、接近物块、夹爪闭合/绑定、抬升、搬运、到达放置区、释放，以及模型轨迹末端。
+3. 直接从原视频导出原始帧，保留足以识别 CoppeliaSim 场景、夹爪、物块和放置点的画面；只做统一裁剪和尺寸调整，不添加视频中不存在的机械臂、障碍物或轨迹效果。
+4. 按时间顺序命名，例如 `01_start.png`、`02_approach.png`、`03_grasp.png`、`04_lift.png`、`05_transport.png`、`06_release.png`、`07_trajectory_end.png`。实际选 6 帧时可以合并相邻阶段，选 8 帧时可拆分“到达放置区”和“释放后”。
+5. 在图注或随图记录中写明“算法 ID、视频录制日期、帧时间戳、阶段名称”。算法 ID 必须来自录制者确认；截图只能证明视频中可见的仿真过程，不能证明 RRT、碰撞检测、物理接触抓取或实机运行。
+6. 插入报告后逐帧核对顺序和画面内容，确认没有把“模型轨迹末端”误写成程序额外执行的“返回 HOME”。
+
+推荐图注格式为：“当前模型在 CoppeliaSim 简化自由夹爪场景中的单点码垛回放过程（按时间顺序）”。在真实截图交付前，报告正文只说明该证据尚待用户提供，不插入空白或替代图片。
 
 ## 9. 常见问题排查
 
@@ -493,15 +559,33 @@ C:\Users\Administrator\OneDrive\文档\科教\Xstone答辩材料2026_07_06\
 | 回放太慢或太快 | `playback_dt` 不合适 | 在配置中小幅调整，先不要改变轨迹点数 |
 | 图中中文或字体异常 | Matplotlib/系统字体问题 | 当前图主要使用英文标签；安装常用字体后重新绘图 |
 
-## 10. 当前代码的已知限制
+## 10. 论文复现边界与当前代码限制
+
+### 10.1 论文方法与当前项目的对应关系
+
+| 论文或预期方案内容 | 当前项目状态 | 继续复现需要补什么 |
+| --- | --- | --- |
+| 轨迹平滑与时间对齐 | 使用自然三次样条直接生成 150 点等长合成数据 | 引入真实示教数据，并实现、比较 MAF/DTW 等预处理链路 |
+| 分段 DMP | 使用 `numpy.array_split` 把 GMR 参考轨迹近等长分为 `38/38/37/37` 点 | 按任务事件、轨迹特征或规划路径确定分段点，并开展消融实验 |
+| RRT 障碍路径与分段点确定 | 未实现 | 建立障碍物场景、规划器、路径可行性和分段联动测试 |
+| 避障、碰撞检查与安全距离 | 未实现 | 增加碰撞集合、距离查询、约束指标和失败案例 |
+| 完整 Dobot、IK 与关节控制 | 未实现；当前直接移动自由夹爪 `GripperBase` | 恢复完整模型，完成 IK、关节限制、速度和可达性验证 |
+| 物块抓取与码垛 | 单放置点；通过阈值和 `setObjectParent` 绑定物块 | 增加接触/力反馈、多放置点和任务成功率评价 |
+| 概率运动基元泛化 | 当前 ProMP 为确定性基函数重构 | 建模权重分布、条件推断与独立随机样本 |
+| 实机实验 | 未开展 | 仿真安全验证后再进行低速实机、标定和急停方案验证 |
+
+因此，当前成果属于对“GMM/GMR 与多种运动基元组合的轨迹重构及简化仿真回放”的部分复现，不是对原论文完整机械臂避障方法和实机实验的完整复现。后续论文写作应把“已实现”“简化对照实现”“未实现”三类内容分开。
+
+### 10.2 当前代码的已知限制
 
 1. **记录格式不完整**：仿真记录脚本没有记录 `gripper`，与当前训练输入不兼容。
 2. **只有单个放置点**：`place_positions` 只有一个元素，模型选择接口虽然保留了 `place_index`，但没有真正进行多目标选择实验。
-3. **不是完整机械臂**：直接移动 `GripperBase`，不会检查 Dobot 关节范围和可达性。
-4. **没有碰撞与避障**：轨迹只描述夹爪位置，没有障碍物环境建模。
-5. **抓取逻辑理想化**：物块通过父子关系绑定，不模拟摩擦、接触力和夹持失败。
+3. **不是完整机械臂**：直接移动 `GripperBase`，没有完整 Dobot 模型、IK 或关节轨迹控制，也不会检查关节范围和可达性。
+4. **没有运动规划、碰撞与避障**：轨迹只描述夹爪位置，没有实现或验证 RRT、障碍物环境建模、碰撞检测和安全距离约束。
+5. **没有接触抓取验证**：物块通过父子关系绑定，不模拟摩擦、接触力和夹持失败。
 6. **概率表达仍不完整**：BGMM+ProMP 当前进行确定性重构，多数 sample API 不产生真正不同的样本。
 7. **指标是轨迹重构指标**：Pearson 和 RMSE 衡量与示教曲线的相似度，不能单独证明实机可执行性、抓取成功率或安全性。
+8. **回放没有独立返航阶段**：客户端只播放所选模型轨迹，末点之后没有额外返回 HOME 的命令。
 
 ## 11. 下一届推荐开发顺序
 
@@ -574,9 +658,11 @@ C:\Users\Administrator\OneDrive\文档\科教\Xstone答辩材料2026_07_06\
 
 - [ ] 能连接 `127.0.0.1:23000`。
 - [ ] `GripperBase`、夹爪关节和物块路径都能找到。
-- [ ] 抓取、搬运、释放和回到起点顺序正确。
+- [ ] 抓取、搬运和释放顺序正确，并核对回放结束位置确为模型轨迹末端。
 - [ ] 至少完整回放一次当前基线算法。
 - [ ] 修改阈值后检查是否出现提前抓取或无法释放。
+- [ ] 从用户录制的同一段真实回放视频提取 6–8 帧，并记录算法 ID、录制日期和帧时间戳。
+- [ ] 未把视频截图解释为 RRT、碰撞检测、接触抓取、完整机械臂、IK 或实机证据。
 
 ### Git 提交
 
@@ -605,10 +691,10 @@ python -m dobot_bgmm_promp.scripts.play_coppeliasim `
   --config configs/default.yaml `
   --place-index 1
 
-# 在临时目录生成 5 条测试数据
+# 在空的临时目录生成论文当前基线所需的 8 条数据
 python -m dobot_bgmm_promp.scripts.generate_palletizing_demos `
   --output-dir .codex_tmp/reproduction-demos `
-  --n-per-pose 5 `
+  --n-per-pose 8 `
   --seed 42
 
 # 查看核心指标

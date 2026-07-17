@@ -1,0 +1,67 @@
+# Full Dobot Magician + suction cup. The original configs/default.yaml and
+# scenes/gripper_palletizing.ttt remain the lightweight gripper-only baseline.
+data:
+  demos_dir: data/demos_suction_turn
+  time_column: t
+  coordinate_columns: [x, y, z]
+  gripper_column: gripper
+
+model:
+  algorithm: compare
+  active_algorithm: bgmm_gmr_promp
+
+plot:
+  output_path: models/suction_arm/learned_trajectory.png
+  comparison_output_path: models/suction_arm/trajectory_comparison.png
+  intermediate_output_dir: models/suction_arm/intermediate
+
+scene:
+  coppeliasim: C:\Program Files\CoppeliaRobotics\CoppeliaSimEdu\coppeliaSim.exe
+  source_scene: C:\Users\Administrator\Desktop\dobotmagician.before_ik_backup.ttt
+  suction_model: C:\Program Files\CoppeliaRobotics\CoppeliaSimEdu\models\components\grippers\suction pad.ttm
+  output: scenes/dobot_magician_suction.ttt
+
+coppeliasim:
+  host: 127.0.0.1
+  port: 23000
+  target_path: /target
+  tip_path: /SuctionTip
+  arm_joint_paths: [/magician_joint_1, /magician_joint_2, /magician_joint_3, /magician_joint_4]
+  arm_base_position: [-0.08315, 0.0, 0.13155]
+  block_path: /PalletBlock
+  block_rest_height: 0.021
+  # Both stations stay outside the base footprint and inside the Dobot reach.
+  pick_position: [-0.20, -0.14, 0.030]
+  place_positions:
+    - [0.08, 0.16, 0.030]
+  place_index: 1
+  gripper_signal: suction_active
+  pickup_threshold: 0.65
+  release_threshold: 0.35
+  release_mode: snap_to_place
+  playback_dt: 0.05
+  coordinate_scale: [1.0, 1.0, 1.0]
+  coordinate_offset: [0.0, 0.0, 0.0]
+  workspace_max_radius: 0.27
+  workspace_z_bounds: [0.030, 0.32]
+  base_exclusion_radius: 0.105
+  base_clearance_z: 0.245
+  use_scene_ik: true
+  use_mean_trajectory: true
+
+gmm_gmr_dmp:
+  output_path: models/suction_arm/gmm_gmr_dmp.joblib
+  plot_output_path: models/suction_arm/learned_trajectory_gmm_gmr_dmp.png
+  params: {n_time_steps: 180, n_components: 8, covariance_type: full, reg_covar: 0.000001, random_state: 7, dmp_basis: 18, dmp_alpha_z: 25.0, dmp_beta_z: 6.25, dmp_alpha_s: 1.0, ridge_lambda: 0.000001}
+inc_gmm_gmr_dmp:
+  output_path: models/suction_arm/inc_gmm_gmr_dmp.joblib
+  plot_output_path: models/suction_arm/learned_trajectory_inc_gmm_gmr_dmp.png
+  params: {n_time_steps: 180, inc_lam: 0.25, dmp_basis: 50, dmp_alpha_z: 25.0, dmp_beta_z: 6.25, dmp_alpha_s: 1.0, ridge_lambda: 0.000001}
+gmm_gmr_segmented_dmp:
+  output_path: models/suction_arm/gmm_gmr_segmented_dmp.joblib
+  plot_output_path: models/suction_arm/learned_trajectory_gmm_gmr_segmented_dmp.png
+  params: {n_time_steps: 180, n_components: 8, covariance_type: full, reg_covar: 0.000001, random_state: 7, dmp_basis: 35, dmp_alpha_z: 25.0, dmp_beta_z: 6.25, dmp_alpha_s: 4.0, ridge_lambda: 0.000001, n_segments: 4}
+bgmm_gmr_promp:
+  output_path: models/suction_arm/bgmm_gmr_promp.joblib
+  plot_output_path: models/suction_arm/learned_trajectory_bgmm_gmr_promp.png
+  params: {n_time_steps: 180, n_components: 8, covariance_type: full, reg_covar: 0.000001, random_state: 7, promp_basis: 25, promp_basis_width: 0.08, ridge_lambda: 0.000001}

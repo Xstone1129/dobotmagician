@@ -73,6 +73,14 @@ class GMMGMRDMP:
         self._require_fit()
         return self.mean_trajectory()[None, :, :]
 
+    def mixture_parameters(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Return the exact fitted GMM used as the input to GMR visualization."""
+
+        self._require_fit()
+        if self.gmm is None:
+            raise RuntimeError("This model has no fitted classic GMM.")
+        return self.gmm.means_, self.gmm.covariances_, self.gmm.weights_
+
     def trajectory_for_place(
         self,
         place_index: int,
@@ -136,6 +144,17 @@ class IncGMMGMRDMP(GMMGMRDMP):
         self._clip_gripper()
         return self
 
+    def mixture_parameters(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        self._require_fit()
+        if self.inc_gmm is None:
+            raise RuntimeError("This model has no fitted incremental GMM.")
+        counts = np.asarray(self.inc_gmm.counts, dtype=float)
+        return (
+            np.asarray(self.inc_gmm.means, dtype=float),
+            np.asarray(self.inc_gmm.covs, dtype=float),
+            counts / counts.sum(),
+        )
+
 
 class GMMGMRSegmentedDMP(GMMGMRDMP):
     """GMM + GMR with a segmented DMP movement primitive."""
@@ -192,6 +211,12 @@ class BGMMGMRProMP(GMMGMRDMP):
         rhs = basis.T @ reference
         self.promp_weights_ = np.linalg.solve(lhs, rhs)
         return basis @ self.promp_weights_
+
+    def mixture_parameters(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        self._require_fit()
+        if self.bgmm is None:
+            raise RuntimeError("This model has no fitted Bayesian GMM.")
+        return self.bgmm.means_, self.bgmm.covariances_, self.bgmm.weights_
 
 
 def _joint_time_output_points(trajectories: list[np.ndarray]) -> np.ndarray:

@@ -49,8 +49,11 @@ def main() -> None:
         gripper_signal=coppeliasim.get("gripper_signal"),
         left_gripper_joint_path=coppeliasim.get("left_gripper_joint_path"),
         right_gripper_joint_path=coppeliasim.get("right_gripper_joint_path"),
+        arm_joint_paths=tuple(coppeliasim.get("arm_joint_paths", [])),
+        arm_base_position=tuple(coppeliasim.get("arm_base_position", [-0.08315, 0.0, 0.13155])),
         block_path=coppeliasim.get("block_path"),
         block_local_position=tuple(coppeliasim.get("block_local_position", [0.0, 0.0, -0.018])),
+        block_rest_height=float(coppeliasim.get("block_rest_height", 0.021)),
         pick_position=tuple(coppeliasim.get("pick_position", [0.20, -0.16, 0.006])),
         place_positions=tuple(tuple(position) for position in place_positions),
         place_index=place_index,
@@ -61,6 +64,19 @@ def main() -> None:
         release_mode=str(coppeliasim.get("release_mode", "current_pose")),
         coordinate_scale=tuple(coppeliasim.get("coordinate_scale", [1.0, 1.0, 1.0])),
         coordinate_offset=tuple(coppeliasim.get("coordinate_offset", [0.0, 0.0, 0.0])),
+        workspace_max_radius=(
+            float(coppeliasim["workspace_max_radius"])
+            if coppeliasim.get("workspace_max_radius") is not None
+            else None
+        ),
+        workspace_z_bounds=(
+            tuple(float(value) for value in coppeliasim["workspace_z_bounds"])
+            if coppeliasim.get("workspace_z_bounds") is not None
+            else None
+        ),
+        base_exclusion_radius=float(coppeliasim.get("base_exclusion_radius", 0.11)),
+        base_clearance_z=float(coppeliasim.get("base_clearance_z", 0.245)),
+        use_scene_ik=bool(coppeliasim.get("use_scene_ik", False)),
     )
 
     if place_index:
