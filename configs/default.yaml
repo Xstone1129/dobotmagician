@@ -21,10 +21,10 @@ gmm_gmr_dmp:
     covariance_type: full
     reg_covar: 0.000001
     random_state: 7
-    dmp_basis: 35
+    dmp_basis: 15
     dmp_alpha_z: 25.0
     dmp_beta_z: 6.25
-    dmp_alpha_s: 4.0
+    dmp_alpha_s: 1.0
     ridge_lambda: 0.000001
 
 inc_gmm_gmr_dmp:
@@ -33,10 +33,13 @@ inc_gmm_gmr_dmp:
   params:
     n_time_steps: 150
     inc_lam: 0.25
-    dmp_basis: 35
+    dmp_basis: 50
+
     dmp_alpha_z: 25.0
     dmp_beta_z: 6.25
-    dmp_alpha_s: 4.0
+
+    dmp_alpha_s: 1.0
+    
     ridge_lambda: 0.000001
 
 gmm_gmr_segmented_dmp:
