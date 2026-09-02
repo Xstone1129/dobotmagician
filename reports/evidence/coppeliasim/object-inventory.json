@@ -1,0 +1,96 @@
+{
+  "source": "CoppeliaSim ZeroMQ Remote API read-only inventory",
+  "simulation_state": 0,
+  "objects": [
+    {
+      "path": "/GripperBase",
+      "handle": 13,
+      "alias": "/GripperBase",
+      "position_world": [
+        0.0,
+        0.0,
+        0.15
+      ]
+    },
+    {
+      "path": "/GripperBase/GripCenter",
+      "handle": 14,
+      "alias": "/GripCenter",
+      "position_world": [
+        0.0,
+        0.0,
+        0.15
+      ]
+    },
+    {
+      "path": "/GripperBase/magician_link_gripper_core_respondable",
+      "handle": 15,
+      "alias": "/magician_link_gripper_core_respondable",
+      "position_world": [
+        0.0,
+        -0.0069068439901838405,
+        0.22
+      ]
+    },
+    {
+      "path": "/GripperBase/magician_link_gripper_core_respondable/GripperJawLeftJoint",
+      "handle": 18,
+      "alias": "/GripperJawLeftJoint",
+      "position_world": [
+        8.067840465533771e-05,
+        -0.0069068439901838405,
+        0.247843407267811
+      ]
+    },
+    {
+      "path": "/GripperBase/magician_link_gripper_core_respondable/GripperJawRightJoint",
+      "handle": 21,
+      "alias": "/GripperJawRightJoint",
+      "position_world": [
+        8.067840465533771e-05,
+        -0.0069068439901838405,
+        0.247843407267811
+      ]
+    },
+    {
+      "path": "/PickPoint",
+      "handle": 24,
+      "alias": "/PickPoint",
+      "position_world": [
+        0.2,
+        -0.16,
+        0.001
+      ]
+    },
+    {
+      "path": "/Place_01",
+      "handle": 25,
+      "alias": "/Place_01",
+      "position_world": [
+        0.34,
+        -0.16,
+        0.001
+      ]
+    },
+    {
+      "path": "/Floor",
+      "handle": 26,
+      "alias": "/Floor",
+      "position_world": [
+        0.2,
+        -0.12,
+        -0.002
+      ]
+    },
+    {
+      "path": "/PalletBlock",
+      "handle": 27,
+      "alias": "/PalletBlock",
+      "position_world": [
+        0.2,
+        -0.16,
+        0.006
+      ]
+    }
+  ]
+}

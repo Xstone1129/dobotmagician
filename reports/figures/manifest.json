@@ -1,0 +1,255 @@
+{
+  "assets": [
+    {
+      "figure_id": "2-2",
+      "output": {
+        "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\reports\\figures\\figure-2-2-coppeliasim-scene-and-objects.png",
+        "size_bytes": 577780,
+        "sha256": "66ac5baa2f90e3f7cf4aa6b56644f96f58d27dfda7768b8f48da12ee928480b9"
+      },
+      "width_px": 3000,
+      "height_px": 1688,
+      "dpi_x": 299.9994,
+      "dpi_y": 299.9994,
+      "source_files": [
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\reports\\evidence\\coppeliasim\\scene-overview.png",
+          "size_bytes": 167664,
+          "sha256": "b1243941d76aac1641b95f6a28208150c40aa3dac25b1f06757f5ffe56318db6"
+        },
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\reports\\evidence\\coppeliasim\\object-inventory.json",
+          "size_bytes": 2034,
+          "sha256": "f7c4839b8de30b8cc16a01f89eec70fe1a5ca5afc69d6780e7497f1f62c9c99c"
+        }
+      ],
+      "source_symbols": [
+        "export_coppeliasim_inventory.collect_object_inventory"
+      ]
+    },
+    {
+      "figure_id": "2-1",
+      "output": {
+        "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\reports\\figures\\figure-2-1-project-data-flow.png",
+        "size_bytes": 209497,
+        "sha256": "0de55e402a6313dcfa2d6e7ca9af73855f748b533018d8a76b07f295ed4bf069"
+      },
+      "width_px": 3082,
+      "height_px": 1907,
+      "dpi_x": 299.9994,
+      "dpi_y": 299.9994,
+      "source_files": [
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\configs\\default.yaml",
+          "size_bytes": 2442,
+          "sha256": "0a313169038d1f40c6bf0164b7346e2f1eeb8690d5407569c322861ab3ca1c26"
+        },
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\src\\dobot_bgmm_promp\\io.py",
+          "size_bytes": 2371,
+          "sha256": "8da963be227a78eb8db193cec1394ec2efc0e602f3182d89185e4ab13b0695b3"
+        },
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\src\\dobot_bgmm_promp\\scripts\\learn.py",
+          "size_bytes": 6252,
+          "sha256": "0bd8965ee45ebbd1d87eb9708f04a3540404759a29b18bf14f819aab19b55cf6"
+        },
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\src\\dobot_bgmm_promp\\scripts\\play_coppeliasim.py",
+          "size_bytes": 3557,
+          "sha256": "c6323b51278aa96887ecdeaad060df365e2a87b4ce84e3d58b0c25b96ce69191"
+        }
+      ],
+      "source_symbols": [
+        "dobot_bgmm_promp.io.load_demonstrations",
+        "dobot_bgmm_promp.scripts.learn.ALGORITHM_BUILDERS",
+        "dobot_bgmm_promp.scripts.play_coppeliasim._model_path"
+      ]
+    },
+    {
+      "figure_id": "2-1",
+      "output": {
+        "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\reports\\figures\\figure-2-1-project-data-flow.svg",
+        "size_bytes": 99373,
+        "sha256": "658d93d871234884b0f488eaafab257573880fe5c9453d62c2c91592fb94d293"
+      },
+      "width_px": null,
+      "height_px": null,
+      "dpi_x": null,
+      "dpi_y": null,
+      "source_files": [
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\configs\\default.yaml",
+          "size_bytes": 2442,
+          "sha256": "0a313169038d1f40c6bf0164b7346e2f1eeb8690d5407569c322861ab3ca1c26"
+        },
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\src\\dobot_bgmm_promp\\io.py",
+          "size_bytes": 2371,
+          "sha256": "8da963be227a78eb8db193cec1394ec2efc0e602f3182d89185e4ab13b0695b3"
+        },
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\src\\dobot_bgmm_promp\\scripts\\learn.py",
+          "size_bytes": 6252,
+          "sha256": "0bd8965ee45ebbd1d87eb9708f04a3540404759a29b18bf14f819aab19b55cf6"
+        },
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\src\\dobot_bgmm_promp\\scripts\\play_coppeliasim.py",
+          "size_bytes": 3557,
+          "sha256": "c6323b51278aa96887ecdeaad060df365e2a87b4ce84e3d58b0c25b96ce69191"
+        }
+      ],
+      "source_symbols": [
+        "dobot_bgmm_promp.io.load_demonstrations",
+        "dobot_bgmm_promp.scripts.learn.ALGORITHM_BUILDERS",
+        "dobot_bgmm_promp.scripts.play_coppeliasim._model_path"
+      ]
+    },
+    {
+      "figure_id": "2-3",
+      "output": {
+        "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\reports\\figures\\figure-2-3-playback-state-machine.png",
+        "size_bytes": 202329,
+        "sha256": "0d88bd45d608728f11d0800489855752998d7b333a179fa5afa52f8712182d77"
+      },
+      "width_px": 3082,
+      "height_px": 1907,
+      "dpi_x": 299.9994,
+      "dpi_y": 299.9994,
+      "source_files": [
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\configs\\default.yaml",
+          "size_bytes": 2442,
+          "sha256": "0a313169038d1f40c6bf0164b7346e2f1eeb8690d5407569c322861ab3ca1c26"
+        },
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\src\\dobot_bgmm_promp\\scripts\\play_coppeliasim.py",
+          "size_bytes": 3557,
+          "sha256": "c6323b51278aa96887ecdeaad060df365e2a87b4ce84e3d58b0c25b96ce69191"
+        },
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\src\\dobot_bgmm_promp\\coppeliasim_client.py",
+          "size_bytes": 6375,
+          "sha256": "2818d96b575c7dfc657a62461ab9090b454505a4ba1c7525ccd28e5d740e5e4b"
+        }
+      ],
+      "source_symbols": [
+        "dobot_bgmm_promp.scripts.play_coppeliasim._model_path",
+        "dobot_bgmm_promp.coppeliasim_client.CoppeliaDobotClient.play_cartesian_trajectory",
+        "dobot_bgmm_promp.coppeliasim_client.CoppeliaDobotClient._attach_block",
+        "dobot_bgmm_promp.coppeliasim_client.CoppeliaDobotClient._release_block"
+      ]
+    },
+    {
+      "figure_id": "2-3",
+      "output": {
+        "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\reports\\figures\\figure-2-3-playback-state-machine.svg",
+        "size_bytes": 92161,
+        "sha256": "de510dfce06612bdcaab14ca3696e8341d058793aa0d2b2a60ae6fbd0ab2e38e"
+      },
+      "width_px": null,
+      "height_px": null,
+      "dpi_x": null,
+      "dpi_y": null,
+      "source_files": [
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\configs\\default.yaml",
+          "size_bytes": 2442,
+          "sha256": "0a313169038d1f40c6bf0164b7346e2f1eeb8690d5407569c322861ab3ca1c26"
+        },
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\src\\dobot_bgmm_promp\\scripts\\play_coppeliasim.py",
+          "size_bytes": 3557,
+          "sha256": "c6323b51278aa96887ecdeaad060df365e2a87b4ce84e3d58b0c25b96ce69191"
+        },
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\src\\dobot_bgmm_promp\\coppeliasim_client.py",
+          "size_bytes": 6375,
+          "sha256": "2818d96b575c7dfc657a62461ab9090b454505a4ba1c7525ccd28e5d740e5e4b"
+        }
+      ],
+      "source_symbols": [
+        "dobot_bgmm_promp.scripts.play_coppeliasim._model_path",
+        "dobot_bgmm_promp.coppeliasim_client.CoppeliaDobotClient.play_cartesian_trajectory",
+        "dobot_bgmm_promp.coppeliasim_client.CoppeliaDobotClient._attach_block",
+        "dobot_bgmm_promp.coppeliasim_client.CoppeliaDobotClient._release_block"
+      ]
+    },
+    {
+      "figure_id": "3-1",
+      "output": {
+        "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\reports\\figures\\figure-3-1-algorithm-structures.png",
+        "size_bytes": 211883,
+        "sha256": "ee1bff5de6fc7811c6a048c9b925a9432bdf28336e620aff59529e760ba60bd5"
+      },
+      "width_px": 3082,
+      "height_px": 1907,
+      "dpi_x": 299.9994,
+      "dpi_y": 299.9994,
+      "source_files": [
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\configs\\default.yaml",
+          "size_bytes": 2442,
+          "sha256": "0a313169038d1f40c6bf0164b7346e2f1eeb8690d5407569c322861ab3ca1c26"
+        },
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\src\\dobot_bgmm_promp\\gmr_primitives.py",
+          "size_bytes": 8577,
+          "sha256": "822cd2ac9f077ae2a27d488aa5fb505d86fe9118aae7d3e9b75390fbfb7ef0d9"
+        },
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\src\\dobot_bgmm_promp\\scripts\\learn.py",
+          "size_bytes": 6252,
+          "sha256": "0bd8965ee45ebbd1d87eb9708f04a3540404759a29b18bf14f819aab19b55cf6"
+        }
+      ],
+      "source_symbols": [
+        "dobot_bgmm_promp.scripts.learn.ALGORITHM_BUILDERS",
+        "dobot_bgmm_promp.gmr_primitives.GMMGMRDMP",
+        "dobot_bgmm_promp.gmr_primitives.IncGMMGMRDMP",
+        "dobot_bgmm_promp.gmr_primitives.GMMGMRSegmentedDMP",
+        "dobot_bgmm_promp.gmr_primitives.BGMMGMRProMP",
+        "dobot_bgmm_promp.gmr_primitives._segmented_dmp_rollout",
+        "dobot_bgmm_promp.gmr_primitives.BGMMGMRProMP._promp_reconstruct"
+      ]
+    },
+    {
+      "figure_id": "3-1",
+      "output": {
+        "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\reports\\figures\\figure-3-1-algorithm-structures.svg",
+        "size_bytes": 86689,
+        "sha256": "731bd7cd9edabf18ee3e76528040e7eb46e4b0c29833c89be879e0ac4acee628"
+      },
+      "width_px": null,
+      "height_px": null,
+      "dpi_x": null,
+      "dpi_y": null,
+      "source_files": [
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\configs\\default.yaml",
+          "size_bytes": 2442,
+          "sha256": "0a313169038d1f40c6bf0164b7346e2f1eeb8690d5407569c322861ab3ca1c26"
+        },
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\src\\dobot_bgmm_promp\\gmr_primitives.py",
+          "size_bytes": 8577,
+          "sha256": "822cd2ac9f077ae2a27d488aa5fb505d86fe9118aae7d3e9b75390fbfb7ef0d9"
+        },
+        {
+          "path": "F:\\FILES\\PROJECTS\\PycharmProjects\\dobot_magician\\src\\dobot_bgmm_promp\\scripts\\learn.py",
+          "size_bytes": 6252,
+          "sha256": "0bd8965ee45ebbd1d87eb9708f04a3540404759a29b18bf14f819aab19b55cf6"
+        }
+      ],
+      "source_symbols": [
+        "dobot_bgmm_promp.scripts.learn.ALGORITHM_BUILDERS",
+        "dobot_bgmm_promp.gmr_primitives.GMMGMRDMP",
+        "dobot_bgmm_promp.gmr_primitives.IncGMMGMRDMP",
+        "dobot_bgmm_promp.gmr_primitives.GMMGMRSegmentedDMP",
+        "dobot_bgmm_promp.gmr_primitives.BGMMGMRProMP",
+        "dobot_bgmm_promp.gmr_primitives._segmented_dmp_rollout",
+        "dobot_bgmm_promp.gmr_primitives.BGMMGMRProMP._promp_reconstruct"
+      ]
+    }
+  ]
+}

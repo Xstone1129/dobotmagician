@@ -1,0 +1,828 @@
+---PAGE 1 chars=2903---
+第 46 卷第 3 期
+2024 年 5 月 机器人 ROBOT V ol.46, No.3
+May, 2024
+DOI：10.13973/j.cnki.robot.230128
+基于分段动态运动基元的机械臂轨迹学习与避障方法
+刘暾东，张馨月，林晨滢，吴晓敏，苏永彬
+（厦门大学萨本栋微米纳米科学技术研究院，福建 厦门 361102）
+摘 要： 针对存在障碍物的复杂工作场景中所规划的机械臂运动轨迹与示教轨迹相似性不高的问题，提出一
+种基于分段 DMP（动态运动基元）的轨迹学习与避障方法。 首先利用 DMP 模型对示教轨迹编码生成一条学习轨
+迹，结合快速扩展随机树算法（ RRT）在工作空间中获得能够顺利回归原始轨迹的避障路径；然后针对避障路径
+确定中间点进行分段 DMP 优化编码，学习生成具有一定泛化能力的复现轨迹；最后通过机械臂进行轨迹复现，实
+现保留原始轨迹特征的避障功能。 通过手写体字母实验与六轴机械臂平台上的物块搬运实验进行验证，结果表明：
+DMP 分段编码的能力有效解决了传统避障算法所造成的轨迹变形和特征破坏问题，与传统避障算法的轨迹相比，
+实验结果轨迹与示教轨迹的相似性有了明显提高，验证了所提方法的有效性。
+关键词：示教学习；轨迹学习；动态运动基元；快速扩展随机树；避障轨迹
+Robotic Arm Trajectory Learning and Obstacle A voidance Method Based on Segmented
+Dynamic Movement Primitive
+LIU Tundong，ZHANG Xinyue ，LIN Chenying ，WU Xiaomin ，SU Y ongbin
+(Pen-Tung Sah Institute of Micro-Nano Science and Technology, Xiamen University, Xiamen 361102, China)
+Abstract: Aiming at the problem of low similarity between the planned robotic arm movement trajectory and the demon-
+stration trajectory in complex work scenes with obstacles, a trajectory learning and obstacle avoidance method based on
+segmented DMP (dynamic motion primitive) is proposed. Firstly, the DMP model is adopted to encode the demonstration
+trajectory to generate a learning trajectory, and the rapidly-exploring random tree (RRT) is utilized also to obtain an obstacle
+avoidance path in the workspace that can return to the original trajectory smoothly. Then, the intermediate point of obstacle
+avoidance path is determined by segmented DMP optimization coding to learn and generate the playback trajectory with
+generalization ability. Finally, the robotic arm reproduces the trajectory, achieving obstacle avoidance while preserving the
+original trajectory characteristics. The handwritten letters experiment and the object handling experiment on the six-axis
+robotic arm platform show that the trajectory deformation and feature destruction caused by the traditional obstacle avoid-
+ance algorithms, is effectively solved by DMP segmentation coding. The experimental result trajectory shows a signiﬁcant
+improvement in similarity to the demonstration trajectory compared to the traditional obstacle avoidance algorithms, which
+veriﬁes the effectiveness of the method proposed.
+Keywords: learning from demonstration; trajectory learning; dynamic motion primitive; rapidly-exploring random tree;
+obstacle avoidance trajectory
+随着机器人技术的高速发展，人类期望机器人
+拥有更高的自主思维能力以完成更复杂的工作。 而
+机械臂作为机器人的操纵器，其灵活度要求也在逐
+步提高 [1]。 因此，针对不同复杂程度的工业应用场
+景，机械臂技能的学习与泛化也成为研究热点。 相
+关技术如强化学习 [2] 等得到大量应用，避障算法能
+够在完成预设任务的同时避免与障碍物发生碰撞，
+因此也被广泛应用于众多工业场景。 尽管目前机
+械臂已经能够学习避障轨迹，但对于修正后轨迹相
+似性要求较高的工业应用，避障后复现轨迹与原始
+轨迹的相似程度、编码精确度等仍面临着很大的挑
+战。 因此，本文主要研究保留原始轨迹特征的轨迹
+学习与避障方法，旨在在解决复杂场景中障碍物问
+题的同时，提高机械臂运动轨迹与示教轨迹的相似
+性。
+机器人编程过程大致可分为传统编程 [3] 与示
+教学习 [4] 两类。传统编程能够预设动作，命令机器
+人完成，但对操作人员专业知识的要求较高，且不
+易进行更改。 而示教学习不仅能完成编程人员预定
+的动作，还能够动态地适应不同工作环境或场景多
+通信作者：吴晓敏，wuxiaomin@stu.xmu.edu.cn 收稿 ／ 录用 ／ 修回：2023-05-17/2023-10-07/2023-10-12
+275
+---PAGE 2 chars=1801---
+276 机 器 人 2024 年 5 月
+变的工作场合 [5]，对提高机器人智能化水平具有重
+要的意义 [6-7]。 示教学习的学习过程一般为从单个
+或少量示教轨迹中进行运动特征的提取，随后将该
+特征在新场景下进行复现 [8]。 因此，示教学习的关
+键步骤是示教轨迹的编码与泛化，而其中被作为热
+点研究的就有动态运动基元（DMP）算法 [9]。DMP
+可以直观上看作一个弹簧阻尼系统。 其通过基函数
+的组合来描述复杂的运动 [10]，以确保轨迹收敛到
+目标点，不需要过多的操作，且稳定性高，泛化能
+力强，已广泛应用于各种机器人轨迹学习与避障场
+景。 王健发等 [11] 就曾提出一种基于改进 DMP 的
+笛卡儿空间 6 维轨迹规划方法，利用四元数描述
+姿态并将其耦合到动力学模型中，避免了避障行为
+过早的问题。 除此之外， DMP 中也融入了许多其
+他算法，Rai 等 [12] 使用 DMP 来表示技能，使用神
+经网络从人类演示中学习反应策略，通过神经网络
+进行在线调节来提高 DMP 算法生成轨迹的有效性
+与稳定性。 而随着对复杂工作场景研究的深入，对
+机械臂灵活性与避障能力的要求也逐渐提高，金
+宇强等 [13] 就引入了快速扩展随机树（ RRT）算法，
+在 DMP 学习编码轨迹上进行再规划得到避障路径，
+并且顺利回到原有轨迹上。
+综上所述， DMP 在轨迹学习上的应用已经十
+分广泛，但是在复现过程中仍存在示教轨迹的形状
+特征遭到破坏，与原始轨迹相似性不高的问题。 因
+此，为利用 DMP 模型学习编码得到准确的且回归
+到原始轨迹上的避障轨迹，同时保留示教轨迹的
+形状特征，本文提出了基于分段 DMP 的机械臂轨
+迹学习与避障方法。 首先通过人为示教得到机械臂
+的示教轨迹，并通过 DMP 算法学习得到泛化轨迹；
+再在工作空间中引入 RRT 避障算法生成避障轨迹；
+不同于直接对 DMP 轨迹进行再规划，这里将通过
+避障轨迹选择其合适的中间点来作为分段 DMP 泛
+化编码的分段点，分段学习后所得的轨迹既完成了
+避障任务，又尽可能保留了原有轨迹的形状特征；
+最后通过手写体数据集实验和六轴机械臂动觉示教
+实验，验证所提出方法的有效性。
+1 示教轨迹的预处理（ Preprocessing of the
+demonstration trajectory）
+1.1 轨迹平滑处理
+示教过程采用人工操作方式，现场应用环境中
+会存在噪声等干扰，因此原始轨迹上可能存在不同
+程度的不平滑问题，如图 1(a) 所示。 同时考虑到工
+业应用场景中的示教轨迹数据一般不存在强脉冲
+干扰，而存在较多高频振荡与周期性干扰环境，因
+此，本文选择使用适用于该应用场景的滑动平均滤
+波（MAF）算法对人工示教轨迹进行平滑预处理，
+减少对后续泛化轨迹的影响。
+MAF 的主要思想是设定一个宽度固定的滑动
+窗口，假设将连续取得的 N 个采样值看成一个长度
+固定的队列，每次采样得到一个新数据放至队尾，
+同时丢掉队首的一个数据。再对队列中的 N 个数据
+进行算术平均运算获得新的滤波结果，即输出滤波
+序列，设宽度为 N = 2k + 1，输入、 输出序列分别
+为 x(n)、y(n)，则滤波后序列为
+y(n) = 1
+2k + 1 ·
+k∑
+i=−k
+x(n + i) (1)
+滤波操作后的轨迹如图 1(b) 所示，可以看到图
+形在转折处的过渡更为流畅，波形整体更加平滑。
+1.2 轨迹时间对齐处理
+实际应用场景中，机械臂需要进行多次人工示
+教以提高原始轨迹的可靠性与准确性，且无法保证
+每次示教的时长一致，导致空间上的轨迹特征不对
+齐。 而当时间序列时长不等，或时间步骤无法对齐
+时，基于欧氏距离无法有效计算 2 个时间序列的距
+离，从而对后续的泛化学习造成影响。 因此，本文
+10 
+10 
+0
+0
+5
+5
+−10
+−10
+y /cm 
+x /cm 
+−5 
+−5 
+(a) 原始轨迹图像
+10 
+10 
+0
+0
+5
+5
+−10
+−10
+y /cm 
+x /cm 
+−5 
+−5 
+(c) 时间对齐后图像
+10 
+10 
+0
+0
+5
+5
+−10
+−10
+y /cm 
+x /cm 
+−5 
+−5 
+(b) 平滑处理后图像 
+图 1 轨迹预处理图像
+Fig.1 Trajectory preprocessing image
+---PAGE 3 chars=2131---
+第 46 卷第 3 期 刘暾东，等：基于分段动态运动基元的机械臂轨迹学习与避障方法 277
+使用动态时间规整（ DTW）算法 [14] 对轨迹进行时
+间对齐处理。 假设有 2 个长度分别为 l1 和 l2 的序
+列 M = <p1, p2, · · ·, pl1>，N = <q1, q2, · · ·, ql2>，为了对
+齐这 2 个序列，需要构造一个 l1 × l2 的矩阵网格，
+矩阵元素 (i, j) 数值为点 pi 和 q j 间的距离 d(pi, q j)，
+通常可用欧氏距离来描述：
+d(pi, q j) = ( pi − q j)2 (2)
+根据动态规划的思想可总结为寻找一条通过该
+矩阵网格中若干格点的路径，其通过的格点即为 2
+个序列进行网格距离计算的最小值点。 因此问题的
+本质为一个最优化问题，在满足约束条件 [15] 的前
+提下找出最优的波形对齐路径，其数学表达为
+fDTW(M, N) = min
+■||■
+K∑
+k=1
+wk
+/
+K (3)
+其 中，wk 定 义 为 序 列M 与 N 的 映 射 函 数wk =
+(i, j)k， 参 数 K 用 来 表 示 对 于 不 同 长 度 规 整 路 径
+的补偿。 最终需要选择一条使得最后距离总和最
+小的路径，定义累积距离 γ(i, j) 为当前格点距离
+d(pi, q j) 与可到达该点的最小邻近元素的累计距离
+之和，其数学表达为
+γ(i, j) = d(pi, q j) +min{γ(i − 1, j − 1),
+γ(i − 1, j), γ(i, j − 1)} (4)
+综上所述，最优路径即为使沿路径的累积距离
+达到最小值的路径，可以通过动态规划（ DP）算
+法 [16] 得到，得到最优路径后就能将轨迹点进行对
+齐，基于 DTW 算法的轨迹时间对齐结果如图 1(c)
+所示，经过时间对齐处理后的多条序列能够保证形
+态尽可能一致，得到最大可能的相似性。
+2 改 进 的 分 段DMP 算 法 （Improved seg-
+mented DMP algorithm）
+经过预处理的示教轨迹通过编码与学习能够得
+到一条复现轨迹。 然而对于复杂应用环境，仅靠简
+单的轨迹学习算法还远远不够，为确保机械臂在复
+现过程中能够保留原有运动特征并避开障碍物，本
+文提出改进的分段 DMP 轨迹学习方法。
+2.1 动态运动基元算法
+DMP 算法可以看作是一个比例―微分控制器
+（PD 控制器） ，与一个轨迹形状学习器的叠加。 其
+中最常用且简单的 PD 控制器可以使用弹簧阻尼系
+统来表示：
+τ ¨y = αy(βy(g − y) − ˙y) (5)
+其中，y 用来表示系统的状态，其 1 阶导数和 2 阶
+导数表示为 ˙y 和 ¨y；g 表示系统最终收敛到的目标
+终点，而参数 αy 与 βy 可以看作 PD 控制器中的 2
+个参数，τ 为时间伸缩因子。假设 f 为非线性函数，
+代表轨迹形状学习器，则可以将 DMP 表示为
+τ ¨y = αy(βy(g − y) − ˙y) + f (6)
+通过改变式 (6) 中的目标终点 g 与非线性项 f
+即可以调整所学习轨迹的终点与形状，而要获得期
+望的轨迹形状，则需要构造不同的非线性项 f。 因
+此可以通过多个非线性基函数的归一化线性叠加来
+实现，其函数可以表示为
+f (ωi, s) =
+∑X
+i=1 ψi(s)ωis∑X
+i=1 ψi(s)
+(7)
+其中 s 为一个来自 1 阶系统的相位变量，ωi 代表每
+个基函数所对应的权重值， X 为基函数的个数， ψi
+定义为径向基函数，其函数表示为
+ψi = exp
+(
+− 1
+2σ 2
+i
+(x − ci)2
+)
+(8)
+式中 σi 与 ci 分别表示基函数 ψi 的宽度与中心，通
+过改变不同基函数与其所对应的权重即可加权获
+得复杂的轨迹，以此获得期望的轨迹形状。 一般来
+说，轨迹的复杂程度与基函数个数成正比 [9]。 若要
+改变轨迹的收敛速度，还需要在表示速度的系统状
+态 1 阶导数 ˙y 上增加一个放缩项 τ，完整式表示为
+τ 2 ¨y = αy(βy(g − y) − τ ˙y) + f (9)
+通过式 (9) 能够得到不同目标终点与收敛速度
+的学习轨迹，式 (9) 也可以看作 DMP 算法的基本公
+式，通过该算法对预处理后的示教轨迹进行编码与
+学习从而获得一条新的轨迹。 该条轨迹具备了示教
+运动的动作特征，且拥有良好的泛化性能。
+2.2 改进的分段 DMP 算法
+由式 (5) 可知，该方程为一个过程方程，如果
+使用 [y, ˙y]T 作为状态量，将其写为矩阵的形式为
+■
+■˙y
+¨y
+■
+■=
+■
+■ 0 1
+−αyβy −αy
+■
+■
+■
+■y
+˙y
+■
+■+
+■
+■ 0
+αyβyg
+■
+■ (10)
+式中系数矩阵的极点实部需选择合适的 αy 与 βy 参
+数来使其小于 0，以保证式子的收敛性，而在学习
+过程中随着时间的推移，方程将收敛到
+−
+■
+■ 0 1
+−αyβy −αy
+■
+■
+−1 ■
+■ 0
+αyβyg
+■
+■=
+■
+■g
+0
+■
+■ (11)
+---PAGE 4 chars=1698---
+278 机 器 人 2024 年 5 月
+由式 (11) 可见，状态量最终会收敛到目标终点
+g 上，即采用 DMP 算法能够保证系统最终收敛到目
+标状态。 在此前提下，可通过式 (7) 用给定的 f (s)
+来获得 ωi，得到 ωi 后设定新的起始位置与目标终
+点并重置相位变量 s，再使用式 (9) 即可得到运动到
+所设置新目标终点的学习轨迹。
+因此，针对复杂应用场景，结合 DMP 算法能
+够收敛至指定目标点的特性，本文提出使用改进的
+分段 DMP 算法进行编码与学习。 设给定示教轨迹
+为 yori，所要生成的学习轨迹的起始点为 y0 、 目标
+终点为 g，即可通过编码与泛化学习得到一条到达
+指定目标点的学习轨迹。 同时在场景中需要避开的
+障碍处计算分段点 b，以分段点为分界点将示教轨
+迹分割为 2 段：
+Yori = (yori1, yori2) (12)
+分别设置两条轨迹的起始点与目标终点坐标为
+YYY 0 = [y01 y02]T (13)
+GGG = [g1 g2]T (14)
+在学习过程中，根据避障点设置前段学习轨迹
+的目标终点 g1，使其生成能够避开障碍物且尽可能
+与原始轨迹保持相似的运动轨迹，再在后段轨迹学
+习时将目标终点 g2 设置为原始示教轨迹终点，以
+保证复现轨迹最终回到原有轨迹上并收敛于原始目
+标点。 由于 DMP 算法是在动态控制过程中收敛到
+目标终点 g，因此在进行分段学习时，只需记录前
+段学习轨迹的终点并将其作为后段学习轨迹的起始
+状态量，即可以直接得到一条完整的学习轨迹，分
+段动态运动基元算法的流程见算法 1。
+算法 1 分段 DMP 算法
+输入: 原始示教轨迹，分段点 b，参数 αy, βy，基函数个数 X
+输出: 分段 DMP 泛化轨迹
+1: 初始化参数 b, αy, βy
+2: 根据分段点 b 划分前段轨迹的目标终点 g1 和后段轨迹
+的起始点 y02
+3: 使用式 (6)～式 (9) 以原始示教轨迹的 y01 为起始点，g1
+为目标终点，学习前段轨迹
+4: 使用式 (6)～式 (9) 以 y02 为起始点，g2 为目标终点，学
+习后段轨迹
+5: 整合两段轨迹得到完整学习轨迹
+在泛化轨迹上自定义分段点，采用分段 DMP
+算法学习示教轨迹，所得轨迹如图 2(a) 所示。 此
+外，只要最终目标终点设置为原始轨迹终点，即可
+得到在学习过程中根据中间点改变形状而不影响最
+终回归到原始轨迹的学习轨迹，如图 2(b) 所示。
+10 
+10 
+0
+0
+5
+5−10 y /cm 
+x /cm 
+−5 
+−5 
+原始示教轨迹 前段学习轨迹
+后段学习轨迹DMP 泛化轨迹
+10 
+10 
+0
+0
+5
+5
+−10
+−10
+y /cm 
+x /cm
+−5 
+−5 
+(a) 分段点在泛化轨迹上时的学习轨迹
+(b) 分段点在泛化轨迹外时的学习轨迹
+图 2 分段 DMP 算法学习结果
+Fig.2 Learning results by the segmented DMP algorithm
+DMP 算法可以通过分段编码生成避开障碍且
+保留原有形状特征的轨迹。 但针对复杂应用环境，
+避障点的选择是一个研究难点，仅靠障碍物轮廓设
+置避障点的方法虽然方便直接，但在多障碍物场景
+中具有很大的不确定性与局限性。 因此，为提高避
+障成功率与实际应用效率，还需要借助算法进行避
+障轨迹的生成以及后续处理。
+3 基于分段 DMP 的轨迹学习与避障方法
+（Trajectory learning and obstacle avoid-
+ance method based on segmented DMP ）
+在分段学习的过程中，分段点的确定尤为重
+要，人工设定分段点容易影响实际应用中的避障成
+功率和精确率。 因此，引入避障算法进行避障轨迹
+的生成，从而确定最佳的分段点供后续学习。
+3.1 基于 RRT 算法的避障轨迹生成
+为了减少由于障碍物引起的人工设定轨迹的成
+本，可以在轨迹学习前期使用避障算法识别障碍
+物，从而生成避障轨迹。 针对想要提高轨迹相似性
+---PAGE 5 chars=1955---
+第 46 卷第 3 期 刘暾东，等：基于分段动态运动基元的机械臂轨迹学习与避障方法 279
+的应用场景，需要利用所生成的避障轨迹确定学习
+分段点，对路径搜索范围、搜索空间的覆盖率有一
+定要求，同时考虑到应用对象的适用性，选择使用
+搜索区域广、 无需对系统进行建模的 RRT 算法 [17]
+生成避障轨迹。
+RRT 算法是一种不需要机器人对环境显式建
+模，仅需要正向运动学来确定新节点 [18] 的基于随
+机采样的避障算法。 算法的具体步骤可描述为：假
+设起始位置 xinit，终止位置 xgoal，搜索步长 S；随
+机在空间内产生一个节点 xrand，然后遍历随机树
+的每一个节点找到离 xrand 最近的节点 xnearest；沿着
+从 xnearest 到 xrand 的方向前进一定距离 S 得到一个
+新的节点 xnew；此时与空间中障碍物进行路径碰撞
+检测，若没有发生碰撞则视作完成一次扩展，如
+图 3(a) 所示，否则舍弃 xnew，扩展失败，如图 3(b)
+所示；重复上述产生随机节点及之后的步骤，直到
+随机扩展树的叶子节点进入终止区域附近，满足
+|xnewxgoal| < S，则轨迹抵达终点，暂停搜索；最后，
+由终止位置 xgoal 回溯到起始位置 xinit，得到一条完
+整的避障路径。
+xinit 障
+碍
+物
+xnew xrand 
+xnearest
+S
+xgoal 
+xinit 障
+碍
+物
+xnew xrand xnearest 
+S
+xgoal 
+(a) xnew  不与障碍物碰撞
+(b) xnew  与障碍物碰撞
+图 3 基于 RRT 的随机扩展树构建过程
+Fig.3 The building process of the RRT-based random
+expansion tree
+RRT 算法虽然具备避开障碍物的能力，但这种
+节点拓展的原理具有一定的盲目性。 因此，考虑以
+RRT 生成的避障轨迹来确认分段点，不仅能克服这
+一缺陷，还能为最终轨迹提供导向。
+3.2 基于分段 DMP 的轨迹学习与避障方法
+在实际应用环境中，若直接利用 RRT 算法生成
+的避障路径替换原有的学习轨迹完成避障，则会破
+坏掉原始示教轨迹的形状特征，从而降低其复现轨
+迹的相似性。 为此，本文提出使用基于分段 DMP
+的轨迹学习与避障方法，在对示教轨迹进行分段学
+习的基础上，借助避障轨迹进行分段点的确认，利
+用 RRT 算法能够改变轨迹目标状态的特性，既能
+实现避开障碍物，又能保留原有轨迹的形状特征，
+以提高轨迹相似性。
+具体分段点的确认过程和避障轨迹生成的原理
+如下：若检测到示教轨迹与空间中的障碍物发生碰
+撞，则取示教轨迹碰撞前后点作为 RRT 算法避障
+的起始点 xinit 和终止点 xgoal 并生成避障路径。 其目
+的是保证避障动作完成后轨迹能顺利回归到原始运
+动轨迹上，记录下该避障路径节点数的中值，并作
+为 DMP 分段处的学习步长 atemp。
+设 DMP 算法的总步长为 a，分段点步长 atemp
+处的轨迹为 yobs，DMP 学习轨迹在 atemp 处对应的
+轨迹为 ytemp。 前段复现轨迹设置的起始点 y01 不变，
+仍为原始数据起点，目标终点 g1 设置为原始数据
+目标终点 g 加上轨迹 yobs 和 ytemp 之差：
+g1 = g + yobs − ytemp (15)
+后段复现轨迹的起始点 y02 直接使用所记录的
+前段学习轨迹终点状态，目标终点 g2 设置为原始
+数据终点。 在学习过程中，分段学习后的前段轨迹
+为学习示教数据中 0～atemp 步长的轨迹，后段轨迹
+从前段轨迹终点开始，针对原始示教轨迹进行步长
+atemp～a 的学习，由于前段轨迹终点状态与后段轨
+迹起点状态一致，最终生成一条与原始示教轨迹形
+状特征一致的完整连续轨迹。 最后在场景中对学习
+轨迹进行避障检测，若检测结果为成功避开所有障
+碍物即为正确轨迹，否则重复避障算法确定分段点
+的步骤，重新生成学习轨迹进行检测。
+完整的算法流程图如图 4 所示。
+4 实验结果与分析（Experiment results and
+analysis）
+实验部分将分别通过手写体字母轨迹复现实验
+与六轴机械臂动觉演示实验来验证本文所提方法的
+有效性。 首先在障碍物场景下验证基于分段 DMP
+方法得到的轨迹复现成功率以及轨迹相似性，并与
+基于 DMP 与 RRT 的再规划方法进行对比。 通过实
+际的机械臂轨迹学习与避障实验，验证所提出方法
+的有效性与所生成轨迹的高相似性。
+4.1 验证效果评价指标
+为了直观地量化实验结果，验证轨迹学习与避
+障实验中所生成的学习轨迹与原始示教轨迹的相似
+---PAGE 6 chars=1415---
+280 机 器 人 2024 年 5 月
+开始 
+示教得到原始轨迹数据
+对轨迹进行平滑与时间对齐处理
+对示教轨迹
+进行碰撞检测
+RRT 算法生成避障路径
+由避障路径确定分段点
+分段  DMP 学习得到复现轨迹
+对复现轨迹
+进行碰撞检测
+结束 
+未发生碰撞
+发生碰撞
+发生碰撞
+未发生碰撞
+DMP 算法编码
+学习与泛化
+图 4 基于分段 DMP 的轨迹学习与避障方法流程图
+Fig.4 Flow chart of trajectory learning and obstacle avoidance
+method based on segmented DMP
+性。 提出使用均方根误差（ RMSE）与衡量相似度
+的指标 DTW [19] 来作为验证效果的评价指标。 两项
+评价指标的计算公式如下：
+fRMSE =
+■||■ 1
+n
+n∑
+i=1
+( ˆyi − yi)2 (16)
+fDTW(P, Q) = f (m, n) (17)
+f (k, h) =∥pk − qh∥ + min{ f (k, h − 1), f (k − 1, h),
+f (k − 1, h − 1)} (18)
+其中， ˆyi 为学习轨迹数据点， yi 为原始轨迹数据
+点，n 为原始轨迹点个数，P = <p1, p2, · · ·, pm>，Q =
+<q1, q2, · · ·, qn> 分别表示 2 条轨迹， ∥ · ∥ 为两点间
+的 欧 氏 距 离。 由 误 差 特 性 可 知， 最 理 想 情 况 下，
+RMSE 值为 0，即均方根误差越小，轨迹相似性越
+高。 而 DTW 算法计算的是损失矩阵，最终得到的
+序列距离就是损失矩阵右下角的值，其数值越接近
+0，轨迹相似性越高。
+4.2 手写体轨迹学习实验
+为了验证基于分段 DMP 的轨迹学习与避障方
+法的轨迹复现成功率及与原始轨迹数据的相似性，
+本节使用公共数据集 [20] 中字母 C 的 10 条轨迹和字
+母 G 的 10 条轨迹进行实验。 实验将在场景中放入
+2 个长为 3 cm、宽为 2 cm 的矩形模拟障碍物，由于
+手写体字母坐标位置不同，为保证发生碰撞， 2 个
+场景中模拟障碍物的设定位置有所不同，但障碍物
+数量以及大小、形状均固定。
+实验首先使用 DMP 算法对手写体字母的原始
+轨迹进行编码与泛化学习，得到泛化性能良好的学
+习轨迹。其中，DMP 算法的实验参数设置如表 1 所
+示。
+表 1 实验参数设置
+Tab.1 Setting of experimental parameters
+参数 参数描述 参数值
+N DMP 基函数个数 200
+α DMP 系数 60
+β DMP 系数 15
+a 轨迹学习总步长 200
+10 
+10 
+0
+0
+5
+5
+−10
+−10
+y /cm 
+x /cm 
+−5 
+−5 
+原始示教轨迹
+RRT 算法再规划的学习轨迹
+基于分段  DMP 的学习轨迹
+障碍物 DMP 泛化轨迹
+10 
+10 
+0
+0
+5
+5
+−10
+−10
+y /cm 
+x /cm 
+−5 
+−5 
+(a) 手写体字母 C 实验 
+(b) 手写体字母 G 实验 
+图 5 手写体字母的泛化与避障实验
+Fig.5 Experiments on generalisation and obstacle avoidance
+for handwritten letters
+---PAGE 7 chars=1718---
+第 46 卷第 3 期 刘暾东，等：基于分段动态运动基元的机械臂轨迹学习与避障方法 281
+表 2 手写体字母轨迹相似性评估
+Tab.2 Trajectory similarity assessment of handwritten letters
+学习与避障算法
+RMSE DTW
+手写体 C 轨迹 手写体 G 轨迹 手写体 C 轨迹 手写体 G 轨迹
+基于 DMP 与 RRT 的再规划算法 1.09 0.63 472.07 160.67
+基于分段 DMP 的算法 0.83 0.59 178.89 140.65
+然后在轨迹学习的过程中进行碰撞检测，若学
+习轨迹在场景中被障碍物阻挡则进行避障处理，根
+据所生成的避障轨迹选择分段点进行分段 DMP 的
+学习，利用 DMP 算法能够指导轨迹到达指定目标
+点的性质绕开障碍物，同时尽可能模仿原有轨迹的
+特征。 为验证所提方法在轨迹复现过程中能够成功
+避开障碍物且保留轨迹原有形状特征的有效性，将
+实验结果与基于 DMP 与 RRT 的再规划算法进行对
+比。2 种算法的实验结果如图 5 所示。
+由图 5 可以看出， 2 种实验方法均成功避障并
+回归到原有轨迹上，顺利到达目标终点。 不同于使
+用避障轨迹对 DMP 泛化轨迹进行再规划，基于分
+段 DMP 的算法在避开障碍物的同时，最大可能地
+保留了原有轨迹的形状特征，不会出现大的变形与
+凸起等问题，为验证 2 种方法所生成轨迹与原始轨
+迹的相似性，使用 RMSE 和 DTW 评价指标进行评
+估，结果如表 2 所示。 由表 2 能看出，该实验中基
+于分段 DMP 的算法生成的轨迹的 RMSE 和 DTW
+值均小于另一算法，认为其轨迹相似性较高。
+4.3 六轴机械臂动觉示教实验
+为验证该算法在实际应用中的可靠性，进行实
+际场景操作实验。 本文使用的机器人操作平台主
+要由 JAKA Zu 5 协作机器人本体、控制器、操作手
+柄、 直流电源以及外部 PC 操作终端等部分组成，
+如图 6 所示。
+图 6 机械臂操作平台
+Fig.6 Robotic arm operating platform
+实验平台在 Windows 环境下使用 TCP/IP 的通
+信方式建立外部 PC 端工作站与机械臂的网络连接，
+机器人控制系统搭载在 Windows 10 系统上，处理
+器为 i5-1035G1，内存为 8 GB，对机械臂进行二次
+开发。 实验对采集到的示教轨迹进行泛化学习，而
+后在机器人末端复现时进行障碍物检测与避障处
+理，从而复现出所生成的轨迹。 此外，实验中使用
+深度相机进行图像采集并处理得到物体位置信息及
+障碍物参数。
+通过机器人进行物块搬运实验来验证轨迹学习
+与避障的有效性和轨迹相似性。 原始轨迹数据的采
+集使用图 6 的操作平台，进行示教操作时，首先设
+置机械臂处于力矩控制模式，由操作人员拖动机械
+臂末端进行引导示教。 移动过程中通过工作站每隔
+100 ms 采集一次机械臂末端的位置，将获取的 3 维
+坐标数据作为散点形式的示教数据，再对其进行预
+处理优化，得到原始的示教轨迹数据。 实验中采集
+了机器人搬运物块过程中的 6 条末端轨迹并进行建
+模与泛化，动觉演示过程如图 7 所示。
+1 2
+3 4
+图 7 物块搬运实验示教过程
+Fig.7 The demonstration process in object
+handling experiment
+在 PC 端运行 DMP 算法，对动觉演示轨迹进行
+编码与泛化学习，实验过程中 DMP 算法所采用的
+参数如表 1 所示。随后在机械臂执行基于分段 DMP
+的避障任务时，借助深度相机获取场景图像并对放
+置在原路径上的障碍物进行检测与信息记录，采用
+所提供的障碍物数量、大小、坐标位置等信息生成
+避障轨迹，重新规划出能够顺利绕开障碍物并回到
+原始轨迹上的学习轨迹。 算法基于 JAKA API 模块
+与机械臂工控机通讯，工控机向机械臂控制系统发
+送控制指令，控制本体按照规划的学习轨迹运动，
+最终完成避障行为。 机械臂基于分段 DMP 的避障
+过程如图 8 所示。
+---PAGE 8 chars=2155---
+282 机 器 人 2024 年 5 月
+1 2
+3 4
+图 8 物块搬运实验避障过程
+Fig.8 The obstacle avoidance process in object
+handling experiment
+由图 8 可知，机械臂能够顺利避开放置在原路
+径上的障碍物。 为对比避障轨迹的实验效果，设计
+另一组基于 DMP 与 RRT 的再规划算法的避障实
+验，重复上述步骤。 并采集 2 种算法下机械臂末端
+运动轨迹，可视化结果如图 9 所示。
+1000
+800
+600
+400
+−600 −400 −200 0 200 400
+200
+100
+400
+350
+300
+250
+150
+50 
+x /mm 
+y /mm 
+z /mm 
+基于 DMP 与 RRT 的避障轨迹
+基于分段 DMP 的避障轨迹
+DMP 复现轨迹
+图 9 轨迹可视化结果
+Fig.9 Results of trajectory visualisation
+由图 9 可知，2 种实验方法均实现了避障并到
+达目标终点。 而基于分段 DMP 的算法所得的轨迹
+更为平滑且接近原始轨迹形状。 为验证 2 种方法所
+生成复现轨迹与原始轨迹的相似性，使用 RMSE 和
+DTW 评价指标进行评估，如表 3 所示。
+表 3 物块搬运轨迹相似性评估
+Tab.3 Similarity assessment of the object handling trajectories
+学习与避障算法 RMSE DTW
+基于 DMP 与 RRT 的再规划算法 36.28 2536.11
+基于分段 DMP 的算法 21.49 1255.52
+结合表 3 中数据能够更为直观地看出，基于
+分段 DMP 的算法所得到的复现轨迹，与原始示教
+轨迹的相似性更高， RMSE 值约为传统方法的 1.69
+倍，DTW 值约为传统方法的 2.02 倍。 为验证算法
+的实时性，确保在实际应用中的效率，统计并对比
+机械臂在 2 种不同学习与避障算法下的运动路径长
+度和搬运物块时长，结果如表 4 所示。
+表 4 算法实时性评估
+Tab.4 Real-time performance assessment of algorithms
+学习与避障算法 路径长度 /mm 运行时间 /s
+基于 DMP 与 RRT
+的再规划算法 1218.95 26.51
+基于分段 DMP 的算法 890.03 16.85
+由表 4 可知，基于分段 DMP 的算法的运行效
+率优于基于 DMP 与 RRT 的再规划算法。 该算法最
+大可能地保证了原有轨迹的形状特征且避免平滑轨
+迹的突变，这在工业中能够一定程度地降低实现成
+本。 实验验证了所提出方法在轨迹学习与避障应用
+上都能提高轨迹的相似性，避免了轨迹发生巨大形
+变，减小了工业应用中的操作成本与设备可能遇到
+的困难。
+5 结论（Conclusion）
+针对存在障碍物的复杂工业环境中机器人运动
+轨迹规划与原始示教轨迹相似性不高的问题，本文
+提出了基于分段 DMP 的轨迹学习与避障方法。 对
+示教轨迹进行编码与泛化得到学习轨迹，借助深度
+相机进行障碍物碰撞检测，若出现碰撞问题则利用
+RRT 算法生成的避障路径确定分段点，凭借 DMP
+算法良好的泛化能力，对原始示教轨迹进行分段
+DMP 编码与学习得到最终复现轨迹。 通过手写体
+字母轨迹实验与机器人物块搬运实验，验证了所提
+出方法在实际应用场景中的有效性，并证明了与传
+统避障算法相比本文算法的复现轨迹与示教轨迹的
+相似性得到了明显提高。 在保留轨迹形状特征的同
+时，更为平滑的复现轨迹也提高了其在工业应用场
+景中的可行性与准确率。
+参考文献（References）
+[1] GARCIA E, JIMENEZ M A, de SANTOS P G, et al. The evolu-
+tion of robotics research[J]. IEEE Robotics & Automation Mag-
+azine, 2007, 14(1): 90-103.
+[2] KROEMER O, NIEKUM S, KONIDARIS G. A review of robot
+learning for manipulation: Challenges, representations, and al-
+gorithms[J]. The Journal of Machine Learning Research, 2021,
+22(1): 1395-1476.
+[3] LOZANO-PEREZ T. Robot programming [J]. Proceedings of
+the IEEE, 1983, 71(7): 821-841.
+[4] BILLARD A, CALINON S, DILLMANN R, et al. Robot pro-
+gramming by demonstration [M]//Springer Handbook of Robo-
+tics. Berlin, Germany: Springer, 2008: 1371-1394.
+---PAGE 9 chars=3973---
+第 46 卷第 3 期 刘暾东，等：基于分段动态运动基元的机械臂轨迹学习与避障方法 283
+[5] 刘乃军，鲁涛，蔡莹皓，等． 机器人操作技能学习方法综
+述[J]．自动化学报，2019，45(3)：458-470.
+LIU N J, LU T, CAI Y H, et al. A review of robot manipula-
+tion skills learning methods[J]. Acta Automatica Sinica, 2019,
+45(3): 458-470.
+[6] VIBHUTE V , ANGAL Y , SURY AKANTH B. A survey of
+learning from demonstration used in robotics [J]. Proceeding of
+NCRIET & Indian Journal of Scientiﬁc Research, 2015, 12(1):
+93-97.
+[7] RA VICHANDAR H, POL YDOROS A S, CHERNOV A S, et al.
+Recent advances in robot learning from demonstration [J]. An-
+nual Review of Control, Robotics, and Autonomous Systems,
+2020, 3: 297-330.
+[8] 黄艳龙，徐德，谭民．机器人运动轨迹的模仿学习综述[J]．
+自动化学报，2022，48(2)：315-334.
+HUANG Y L, XU D, TAN M. On imitation learning of robot
+movement trajectories: A survey[J]. Acta Automatica Sinica,
+2022, 48(2): 315-334.
+[9] IJSPEERT A J, NAKANISHI J, SCHAAL S. Movement im-
+itation with nonlinear dynamical systems in humanoid robots
+[C]//IEEE International Conference on Robotics and Automa-
+tion. Piscataway, USA: IEEE, 2002: 1398-1403.
+[10] IJSPEERT A J, NAKANISHI J, HOFFMANN H, et al. Dynam-
+ical movement primitives: Learning attractor models for motor
+behaviors[J]. Neural Computation, 2013, 25(2): 328-373.
+[11] 王健发，王耀南，陈文锐，等． 基于改进动态运动基元的
+6D 轨迹规划[J]．控制理论与应用，2022，39(5)：809-818.
+W ANG J F, W ANG Y N, CHEN W R, et al. 6D trajectories
+planning based on improved dynamic movement primitives[J].
+Control Theory & Applications, 2022, 39(5): 809-818.
+[12] RAI A, SUTANTO G, SCHAAL S, et al. Learning feedback
+terms for reactive planning and control [C]//IEEE Internation-
+al Conference on Robotics and Automation. Piscataway, USA:
+IEEE, 2017: 2184-2191.
+[13] 金 宇 强， 仇 翔， 刘 安 东， 等．基 于 DMP-RRT 的 机 械 臂
+轨迹学习与避障方法 [J]．系统科学与数学， 2022，42(2)：
+193-205.
+JIN Y Q, QIU X, LIU A D, et al. A trajectory learning and obsta-
+cle avoidance method for manipulators based on DMP-RRT[J].
+Journal of Systems Science and Mathematical Sciences, 2022,
+42(2): 193-205.
+[14] ITAKURA F. Minimum prediction residual principle applied to
+speech recognition[J]. IEEE Transactions on Acoustics, Speech,
+and Signal Processing, 1975, 23(1): 67-72.
+[15] KEOGH E J, PAZZANI M J. Derivative dynamic time warp-
+ing[C]//SIAM International Conference on Data Mining. Irvine,
+USA: SIAM, 2012. DOI: 10.1137/1.9781611972719.1.
+[16] BELLMAN R. Dynamic programming [M]. Princeton, USA:
+Princeton University Press, 2010.
+[17] LA V ALLE S M.Rapidly-exploring random trees: A new tool
+for path planning [J]. Research Report, 1998, 98(11): 1-4.
+[18] MELCHIOR N A, SIMMONS R. Particle RRT for path plan-
+ning with uncertainty [C]//IEEE International Conference on
+Robotics and Automation. Piscataway, USA: IEEE, 2007:
+1617-1624.
+[19] 郭岩，罗珞珈，汪洋，等． 一种基于 DTW 改进的轨迹相
+似度算法[J]．国外电子测量技术，2016，35(9)：66-71.
+GUO Y , LUO L J, W ANG Y , et al. Improved DTW algorithm
+for trajectory similarity[J]. Foreign Electronic Measurement
+Technology, 2016, 35(9): 66-71.
+[20] PIGNA T E, CALINON S.Learning adaptive dressing assistance
+from human demonstration [J]. Robotics and Autonomous Sys-
+tems, 2017, 93: 61-75.
+作者简介：
+刘暾东（1970 –） ，男，教授，博士生导师。研究领域：工
+业机器人与机器视觉。
+吴晓敏 （1992 –） ，男，博士生。 研究领域：机器人控制
+与模仿学习。
+（上接第 274 页）
+[22] SCHLAGENHAUF J, HOFMEIER P , BRONNENMEYER T,
+et al. Cascaded nonlinear MPC for realtime quadrotor position
+tracking[J]. IFAC-PapersOnLine, 2020, 53(2): 7026-7032.
+[23] HARIK E H C, GU ´ERIN F, GUINAND F, et al. UA V -UGV
+cooperation for objects transportation in an industrial area
+[C]//IEEE International Conference on Industrial Technology.
+Piscataway, USA: IEEE, 2015: 547-552.
+[24] LEE T, LEOK M, MCCLAMROCH N H. Geometric tracking
+control of a quadrotor UA V on SE(3) [C]//49th IEEE Confer-
+ence on Decision and Control. Piscataway, USA: IEEE, 2010:
+5420-5425.
+[25] BRESCIANINI D, D’ANDREA R. Tilt-prioritized quadro-
+copter attitude control [J]. IEEE Transactions on Control Sys-
+tems Technology, 2020, 28(2): 376-387.
+作者简介：
+郑勇杰 （1998 –） ，男，硕士生。 研究领域：飞行机器人
+建模与控制。
+杨丽英（1979 –） ，女，博士，副研究员。研究领域：飞行
+机器人自主控制与规划，空地协同机器人系统。
