@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from dobot_algorithms.model_selection import normalize_demo
+from dobot_algorithms.trajectory_selection import normalize_demo
 
 
 @dataclass(frozen=True)

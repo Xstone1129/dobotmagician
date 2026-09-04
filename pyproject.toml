@@ -24,7 +24,7 @@ dev = [
 ]
 
 [project.scripts]
-dobot-learn = "dobot_algorithms.scripts.learn:main"
+dobot-train = "dobot_algorithms.scripts.train_models:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

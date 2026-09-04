@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from dobot_algorithms.scripts.generate_suction_turn_demos import (
+from dobot_algorithms.scripts.generate_suction_demos import (
     ARM_BASE_XY,
     OPPOSITE_PLACE,
     REAR_PICK,

@@ -5,10 +5,10 @@ from dataclasses import dataclass
 import numpy as np
 from sklearn.mixture import BayesianGaussianMixture, GaussianMixture
 
-from dobot_algorithms.dmp import DiscreteDMP
+from dobot_algorithms.primitives.dmp import DiscreteDMP
 from dobot_algorithms.gmr.regression import gmr
-from dobot_algorithms.incremental_gmm import IncrementalGMM
-from dobot_algorithms.model_selection import normalize_demo, select_trajectory_for_place
+from dobot_algorithms.gmm.incremental import IncrementalGMM
+from dobot_algorithms.trajectory_selection import normalize_demo, select_trajectory_for_place
 
 
 @dataclass(frozen=True)

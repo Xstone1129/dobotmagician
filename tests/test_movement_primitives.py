@@ -1,13 +1,13 @@
 import numpy as np
 import pytest
 
-from dobot_algorithms.gmr_primitives import (
+from dobot_algorithms.movement_primitives import (
     BGMMGMRProMP,
     GMMGMRDMP,
     GMMGMRSegmentedDMP,
     IncGMMGMRDMP,
 )
-from dobot_algorithms.metrics import evaluate_reference_trajectory, format_trajectory_metrics
+from dobot_algorithms.evaluation import evaluate_reference_trajectory, format_trajectory_metrics
 
 
 def _palletizing_demos():

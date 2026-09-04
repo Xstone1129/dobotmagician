@@ -53,7 +53,7 @@ All demo files for one training run must use the same coordinate columns.
 The default config trains all four algorithms and prints Pearson/RMSE metrics:
 
 ```powershell
-python -m dobot_algorithms.scripts.learn --config configs/default.yaml
+python -m dobot_algorithms.scripts.train_models --config configs/default.yaml
 ```
 
 Use `model.algorithm` in `configs/default.yaml` to train only one algorithm.

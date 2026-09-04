@@ -2,7 +2,7 @@ from pathlib import Path
 
 import numpy as np
 
-from dobot_algorithms.plotting import plot_gmm_components, plot_gmr_regression
+from dobot_algorithms.visualization import plot_gmm_components, plot_gmr_regression
 
 
 def test_intermediate_gmm_and_gmr_plots_are_saved(tmp_path: Path) -> None:

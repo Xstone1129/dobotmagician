@@ -4,7 +4,7 @@ import numpy as np
 
 from dobot_algorithms.gmm.base import GMMBase
 from dobot_algorithms.gmr.base import GMRBase
-from dobot_algorithms.gmr_primitives import _regress_with_gmr
+from dobot_algorithms.movement_primitives import _regress_with_gmr
 
 
 class ConditionalGMR(GMRBase):
