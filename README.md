@@ -56,7 +56,22 @@ The default config trains all four algorithms and prints Pearson/RMSE metrics:
 python -m dobot_algorithms.scripts.train_models --config configs/default.yaml
 ```
 
-Use `model.algorithm` in `configs/default.yaml` to train only one algorithm.
+The default configuration trains all four algorithms. To generate noisy demos first:
+
+```bash
+python -m dobot_algorithms.scripts.generate_suction_demos \
+  --output-dir data/demos_suction_turn --count 8 --noise-std 0.0015
+```
+
+Train one selected algorithm without editing YAML:
+
+```bash
+python -m dobot_algorithms.scripts.train_models \
+  --config configs/default.yaml --algorithm gmm_gmr_dmp
+```
+
+Valid values are `gmm_gmr_dmp`, `inc_gmm_gmr_dmp`,
+`gmm_gmr_segmented_dmp`, `bgmm_gmr_promp`, and `compare`.
 
 ## Algorithms
 

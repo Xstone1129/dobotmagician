@@ -35,6 +35,11 @@ ALGORITHM_BUILDERS: dict[str, tuple[str, Callable[..., object]]] = {
 def main() -> None:
     parser = argparse.ArgumentParser(description="Learn GMM/GMR movement primitive models.")
     parser.add_argument("--config", default="configs/default.yaml")
+    parser.add_argument(
+        "--algorithm",
+        choices=[*ALGORITHM_BUILDERS, "compare"],
+        help="Override model.algorithm without editing the YAML configuration.",
+    )
     args = parser.parse_args()
 
     config = load_config(args.config)
@@ -45,7 +50,7 @@ def main() -> None:
         gripper_column=config["data"].get("gripper_column"),
     )
 
-    algorithm = config["model"].get("algorithm", "compare")
+    algorithm = args.algorithm or config["model"].get("algorithm", "compare")
     if algorithm != "compare" and algorithm not in ALGORITHM_BUILDERS:
         options = ", ".join([*ALGORITHM_BUILDERS, "compare"])
         raise ValueError(f"model.algorithm must be one of: {options}")

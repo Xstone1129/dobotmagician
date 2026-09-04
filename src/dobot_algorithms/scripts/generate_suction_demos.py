@@ -41,7 +41,12 @@ def _turn_arc(pick: np.ndarray, place: np.ndarray, n_points: int = 13) -> np.nda
     return arc
 
 
-def build_demo(rng: np.random.Generator, n_steps: int = 180) -> np.ndarray:
+def build_demo(
+    rng: np.random.Generator, n_steps: int = 180, noise_std: float = 0.0015
+) -> np.ndarray:
+    """Build one demo with Gaussian measurement noise on Cartesian coordinates."""
+    if noise_std < 0:
+        raise ValueError("noise_std must be non-negative")
     xy_noise = rng.uniform(-0.007, 0.007, size=2)
     pick = REAR_PICK + np.array([xy_noise[0], xy_noise[1], 0.0])
     place = OPPOSITE_PLACE + np.array([-xy_noise[1], xy_noise[0], 0.0])
@@ -75,7 +80,10 @@ def build_demo(rng: np.random.Generator, n_steps: int = 180) -> np.ndarray:
     xyz = PchipInterpolator(source_phase, waypoints, axis=0)(phase)
     signal = np.clip(PchipInterpolator(source_phase, vacuum)(phase), 0.0, 1.0)
     time = np.linspace(0.0, (n_steps - 1) * 0.04, n_steps)
-    return np.column_stack([time, xyz, signal])
+    noisy_xyz = xyz + rng.normal(0.0, noise_std, size=xyz.shape)
+    noisy_xyz[0] = HOME
+    noisy_xyz[-1] = HOME
+    return np.column_stack([time, noisy_xyz, signal])
 
 
 def main() -> None:
@@ -83,6 +91,7 @@ def main() -> None:
     parser.add_argument("--output-dir", default="data/demos_suction_turn")
     parser.add_argument("--count", type=int, default=8)
     parser.add_argument("--seed", type=int, default=57)
+    parser.add_argument("--noise-std", type=float, default=0.0015, help="Cartesian Gaussian noise (m).")
     args = parser.parse_args()
     output = Path(args.output_dir)
     output.mkdir(parents=True, exist_ok=True)
@@ -93,8 +102,8 @@ def main() -> None:
         with (output / f"demo_{index:02d}.csv").open("w", newline="", encoding="utf-8") as file:
             writer = csv.writer(file, lineterminator="\n")
             writer.writerow(["t", "x", "y", "z", "gripper"])
-            writer.writerows(build_demo(rng))
-    print(f"Saved {args.count} rear-pick / turn / opposite-place demos to {output.resolve()}")
+            writer.writerows(build_demo(rng, noise_std=args.noise_std))
+    print(f"Saved {args.count} noisy demos (std={args.noise_std:g} m) to {output.resolve()}")
 
 
 if __name__ == "__main__":
