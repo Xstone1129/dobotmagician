@@ -9,6 +9,10 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
+import numpy as np
+from scipy.optimize import least_squares
+from scipy.spatial.transform import Rotation
+
 
 @dataclass(frozen=True)
 class DHParameters:
@@ -22,26 +26,38 @@ DH = DHParameters()
 
 
 def inverse_kinematics(x: float, y: float, tip_z: float, dh: DHParameters = DH) -> tuple[float, float, float, float]:
-    """Return a vertical-tool IK solution ``(q1, q2, q3, q4)`` in radians.
-
-    The standard-DH frames use ``alpha1=-pi/2``.  With a vertical tool,
-    ``q4=-(q2+q3)`` and the last DH link contributes only to the radial reach.
-    This selects the elbow-up branch used by the physical joint limits.
-    """
-    q1 = math.atan2(y, x)
-    radial = math.hypot(x, y) - dh.a4
-    height = tip_z - dh.d1
-    cosine = (radial * radial + height * height - dh.a2 * dh.a2 - dh.a3 * dh.a3) / (2.0 * dh.a2 * dh.a3)
-    if not -1.0 <= cosine <= 1.0:
-        raise ValueError(f"Unreachable suction tip: ({x:.3f}, {y:.3f}, {tip_z:.3f})")
-    elbow = -math.acos(max(-1.0, min(1.0, cosine)))
-    shoulder = math.atan2(-height, radial) - math.atan2(
-        dh.a3 * math.sin(elbow), dh.a2 + dh.a3 * math.cos(elbow)
+    """Solve the migrated URDF chain for a suction-tip position."""
+    target = np.array([x, y, tip_z], dtype=float)
+    result = least_squares(
+        lambda q: _urdf_tip_position(q) - target,
+        x0=np.array([math.atan2(y, x), 0.8, 0.8, 0.0]),
+        bounds=(np.array([-math.pi, 0.0, 0.0, -0.5]), np.array([math.pi, math.pi / 2, math.pi / 2, 0.5])),
+        max_nfev=2000,
     )
-    q2 = shoulder
-    q3 = elbow
-    q4 = -(q2 + q3)
-    return q1, q2, q3, q4
+    if not result.success or np.linalg.norm(result.fun) > 2e-4:
+        raise ValueError(f"Unreachable suction tip: ({x:.3f}, {y:.3f}, {tip_z:.3f})")
+    return tuple(float(value) for value in result.x)
+
+
+def _transform(xyz: tuple[float, float, float], rpy: tuple[float, float, float]) -> np.ndarray:
+    transform = np.eye(4)
+    transform[:3, :3] = Rotation.from_euler("xyz", rpy).as_matrix()
+    transform[:3, 3] = xyz
+    return transform
+
+
+def _urdf_tip_position(q: np.ndarray) -> np.ndarray:
+    origins = [
+        ((0.0, 0.0, 0.024), (0.0, 0.0, 0.0)),
+        ((-0.01175, 0.0, 0.114), (1.570796325, 0.0, -1.570796325)),
+        ((0.02699, 0.13228, -0.01175), (0.0, math.pi, 0.0)),
+        ((0.07431, -0.12684, 0.0), (0.0, math.pi, 0.0)),
+    ]
+    transform = np.eye(4)
+    for index, (xyz, rpy) in enumerate(origins):
+        transform = transform @ _transform(xyz, rpy) @ _transform((0.0, 0.0, 0.0), (0.0, 0.0, q[index]))
+    transform = transform @ _transform((-0.0328, -0.02, 0.0), (-1.57, 0.0, 0.0))
+    return transform[:3, 3]
 
 
 def forward_position(q1: float, q2: float, q3: float, q4: float, dh: DHParameters = DH) -> tuple[float, float, float]:
