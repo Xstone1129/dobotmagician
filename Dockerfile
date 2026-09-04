@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /workspace/dobotmagician
 COPY . .
 
-RUN python3 -m pip install --no-cache-dir --break-system-packages -e . \
+RUN python3 -m pip install --no-cache-dir --break-system-packages --no-deps -e . \
     && . /opt/ros/jazzy/setup.sh \
     && colcon build --symlink-install --base-paths ros2_ws/src
 
