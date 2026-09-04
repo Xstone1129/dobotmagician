@@ -1,0 +1,20 @@
+services:
+  dobot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dobot-magician:jazzy
+    container_name: dobot-magician
+    network_mode: host
+    environment:
+      DISPLAY: ${DISPLAY}
+      QT_X11_NO_MITSHM: "1"
+      GZ_SIM_RESOURCE_PATH: /workspace/dobotmagician/ros2_ws/install/dobot_magician_ros/share/dobot_magician_ros
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./models:/workspace/dobotmagician/models
+      - ./ros2_ws/src:/workspace/dobotmagician/ros2_ws/src
+      - ./data:/workspace/dobotmagician/data:ro
+    stdin_open: true
+    tty: true
+    command: bash

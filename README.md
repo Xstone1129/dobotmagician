@@ -90,6 +90,36 @@ noisy demonstrations using Pearson correlation and RMSE.
 
 ## ROS 2 + Gazebo
 
+### Docker deployment
+
+Docker provides a reproducible ROS 2 Jazzy + Gazebo Sim environment. On a Linux host with Docker installed:
+
+```bash
+xhost +local:docker
+docker compose build
+docker compose up -d
+```
+
+Inside the container, launch the simulation or RViz:
+
+```bash
+ros2 launch dobot_magician_ros simulation.launch.py
+# or, in another terminal:
+docker compose exec dobot bash
+ros2 launch dobot_magician_ros view_model.launch.py
+
+docker compose down
+```
+
+For algorithm training:
+
+```bash
+docker compose run --rm dobot \
+  python3 -m dobot_algorithms.scripts.train_models --config configs/suction_arm.yaml
+```
+
+The host `models/` directory is mounted into the container, so trained models and plots remain available after the container exits. `xhost -local:docker` restores the X11 permission after use.
+
 On Ubuntu 24.04 with ROS 2 Jazzy, build the new simulation package:
 
 ```bash
