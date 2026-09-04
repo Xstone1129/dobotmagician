@@ -17,7 +17,8 @@ COPY . .
 
 RUN python3 -m pip install --no-cache-dir --break-system-packages --no-deps -e . \
     && . /opt/ros/jazzy/setup.sh \
-    && colcon build --symlink-install --base-paths ros2_ws/src
+    && colcon --log-base ros2_ws/log build --symlink-install --base-paths ros2_ws/src \
+       --build-base ros2_ws/build --install-base ros2_ws/install
 
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
