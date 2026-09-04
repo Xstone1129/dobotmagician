@@ -71,4 +71,15 @@
   <gazebo reference="link_4"><material>Gazebo/Grey</material></gazebo>
   <gazebo reference="link_7"><material>Gazebo/Black</material></gazebo>
   <gazebo reference="link_7"><mu1>0.9</mu1><mu2>0.9</mu2><kp>1000000</kp><kd>100</kd></gazebo>
+  <!-- Gazebo creates/removes this fixed joint on attach / detach commands. -->
+  <gazebo>
+    <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint">
+      <parent_link>link_4</parent_link>
+      <child_model>pick_box</child_model>
+      <child_link>link</child_link>
+      <detach_topic>/dobot_magician/detach</detach_topic>
+      <attach_topic>/dobot_magician/attach</attach_topic>
+      <output_topic>/dobot_magician/suction_state</output_topic>
+    </plugin>
+  </gazebo>
 </robot>
