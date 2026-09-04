@@ -17,11 +17,12 @@ def plot_trajectories(
     output_path: str | Path,
     *,
     title: str = "Learned trajectory",
+    include_gripper: bool = False,
 ) -> None:
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
 
-    dims = mean_trajectory.shape[1]
+    dims = mean_trajectory.shape[1] if include_gripper or mean_trajectory.shape[1] < 4 else 3
     dim_names = _dimension_names(dims)
     fig, axes = plt.subplots(dims, 1, figsize=(10, max(3.8, 2.5 * dims)), sharex=True)
     if dims == 1:

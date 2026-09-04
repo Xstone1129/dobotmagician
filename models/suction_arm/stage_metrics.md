@@ -2,11 +2,11 @@
 
 | Stage | Algorithm | Pearson Mean | RMSE Mean |
 |---|---|---:|---:|
-| GMR | GMM+GMR+DMP | 0.9716 | 0.0209 |
-| Primitive | GMM+GMR+DMP | 0.8732 | 0.0372 |
-| GMR | Inc-GMM+GMR+DMP | 0.9957 | 0.0045 |
-| Primitive | Inc-GMM+GMR+DMP | 0.9507 | 0.0182 |
-| GMR | GMM+GMR+Segmented DMP | 0.9716 | 0.0209 |
-| Primitive | GMM+GMR+Segmented DMP | 0.9696 | 0.0232 |
-| GMR | BGMM+GMR+ProMP | 0.9416 | 0.0390 |
-| Primitive | BGMM+GMR+ProMP | 0.9416 | 0.0391 |
+| GMR | GMM+GMR+DMP | 0.9727 | 0.0204 |
+| Primitive | GMM+GMR+DMP | 0.7483 | 0.0450 |
+| GMR | Inc-GMM+GMR+DMP | 0.9958 | 0.0044 |
+| Primitive | Inc-GMM+GMR+DMP | 0.7729 | 0.0296 |
+| GMR | GMM+GMR+Segmented DMP | 0.9727 | 0.0204 |
+| Primitive | GMM+GMR+Segmented DMP | 0.9605 | 0.0256 |
+| GMR | BGMM+GMR+ProMP | 0.9470 | 0.0380 |
+| Primitive | BGMM+GMR+ProMP | 0.9507 | 0.0375 |

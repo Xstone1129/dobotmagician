@@ -57,6 +57,7 @@ class GMMGMRDMP:
             self.config.n_time_steps,
             self.n_dims,
         )
+        _anchor_gmr_endpoints(self.gmr_trajectory_, trajectories)
         self.trajectory_ = self._fit_dmp(self.gmr_trajectory_).dynamic_rollout()
         self._clip_gripper()
         return self
@@ -140,6 +141,7 @@ class IncGMMGMRDMP(GMMGMRDMP):
             self.config.n_time_steps,
             self.n_dims,
         )
+        _anchor_gmr_endpoints(self.gmr_trajectory_, trajectories)
         self.trajectory_ = self._fit_dmp(self.gmr_trajectory_).dynamic_rollout()
         self._clip_gripper()
         return self
@@ -196,6 +198,7 @@ class BGMMGMRProMP(GMMGMRDMP):
             self.config.n_time_steps,
             self.n_dims,
         )
+        _anchor_gmr_endpoints(self.gmr_trajectory_, trajectories)
         self.trajectory_ = self._promp_reconstruct(self.gmr_trajectory_)
         self._clip_gripper()
         return self
@@ -237,6 +240,13 @@ def _regress_with_gmr(
     if output_dim >= 4:
         trajectory[:, 3] = np.clip(trajectory[:, 3], 0.0, 1.0)
     return trajectory
+
+
+def _anchor_gmr_endpoints(trajectory: np.ndarray, normalized_demos: list[np.ndarray]) -> None:
+    """Prevent GMR edge extrapolation from changing the demonstrated start/goal."""
+    demo_stack = np.stack(normalized_demos)
+    trajectory[0] = np.mean(demo_stack[:, 0], axis=0)
+    trajectory[-1] = np.mean(demo_stack[:, -1], axis=0)
 
 
 def _segmented_dmp_rollout(
