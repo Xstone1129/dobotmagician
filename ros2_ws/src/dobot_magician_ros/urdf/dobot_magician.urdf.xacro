@@ -18,10 +18,11 @@
 
   <xacro:mesh_link name="base_link" visual="base_link.STL" collision="base_link.STL" material="white" rgba="1 1 1 1" mass="1.20" ixx="0.004" iyy="0.004" izz="0.006"/>
   <!-- STL visuals have no embedded Collada material, so Gazebo can apply the URDF colors reliably. -->
-  <xacro:mesh_link name="link_1" visual="link_1.STL" collision="link_1.STL" material="white" rgba="1 1 1 1" mass="0.45" ixx="0.0015" iyy="0.0015" izz="0.002"/>
-  <xacro:mesh_link name="link_2" visual="link_2.STL" collision="link_2.STL" material="white" rgba="1 1 1 1" mass="0.35" ixx="0.002" iyy="0.002" izz="0.003"/>
-  <!-- link_3/link_4 retain controller names and use source link_5/link_6 meshes. -->
-  <xacro:mesh_link name="link_3" visual="link_5.STL" collision="link_5.STL" material="white" rgba="1 1 1 1" mass="0.30" ixx="0.002" iyy="0.002" izz="0.003"/>
+  <!-- DAE visuals preserve the material data from magician3D; STL remains the collision mesh. -->
+  <xacro:mesh_link name="link_1" visual="link_1.dae" collision="link_1.STL" material="white" rgba="1 1 1 1" mass="0.45" ixx="0.0015" iyy="0.0015" izz="0.002"/>
+  <xacro:mesh_link name="link_2" visual="link_2.dae" collision="link_2.STL" material="white" rgba="1 1 1 1" mass="0.35" ixx="0.002" iyy="0.002" izz="0.003"/>
+  <!-- Source link_5 is mapped to controller link_3. -->
+  <xacro:mesh_link name="link_3" visual="link_5.dae" collision="link_5.STL" material="white" rgba="1 1 1 1" mass="0.30" ixx="0.002" iyy="0.002" izz="0.003"/>
   <xacro:mesh_link name="link_4" visual="link_6.STL" collision="link_6.STL" material="grey" rgba="0.55 0.58 0.62 1" mass="0.12" ixx="0.0002" iyy="0.0002" izz="0.0003"/>
 
   <joint name="joint_1" type="revolute">
