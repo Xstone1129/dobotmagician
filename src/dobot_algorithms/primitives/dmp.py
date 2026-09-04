@@ -44,6 +44,7 @@ class DiscreteDMP(PrimitiveBase):
         self.goal_: np.ndarray | None = None
         self.demo_mean_: np.ndarray | None = None
         self.n_dims: int | None = None
+        self.zero_displacement_: np.ndarray | None = None
 
     def fit(self, trajectories: list[np.ndarray]) -> DiscreteDMP:
         if not trajectories:
@@ -56,6 +57,7 @@ class DiscreteDMP(PrimitiveBase):
         self.demo_mean_ = np.mean(np.stack(normalized), axis=0)
         self.y0_ = self.demo_mean_[0].copy()
         self.goal_ = self.demo_mean_[-1].copy()
+        self.zero_displacement_ = np.abs(self.goal_ - self.y0_) < 1e-6
         self.weights_ = self._fit_forcing_terms(self.demo_mean_)
         return self
 
@@ -79,6 +81,11 @@ class DiscreteDMP(PrimitiveBase):
             dy = dy + ddy * dt
             y = y + dy * dt
         trajectory = self._smooth_goal_transition(trajectory)
+        # A DMP's spatial scaling is undefined when start and goal coincide.
+        # Preserve the learned shape for those dimensions instead of integrating
+        # an arbitrarily scaled forcing term that can create overshoot.
+        if self.zero_displacement_ is not None and np.any(self.zero_displacement_):
+            trajectory[:, self.zero_displacement_] = self.demo_mean_[:, self.zero_displacement_]
         if self.n_dims is not None and self.n_dims >= 4:
             trajectory[:, 3] = np.clip(trajectory[:, 3], 0.0, 1.0)
         return trajectory

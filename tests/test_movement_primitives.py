@@ -8,6 +8,7 @@ from dobot_algorithms.movement_primitives import (
     IncGMMGMRDMP,
 )
 from dobot_algorithms.evaluation import evaluate_reference_trajectory, format_trajectory_metrics
+from dobot_algorithms.primitives.dmp import DiscreteDMP
 
 
 def _palletizing_demos():
@@ -72,3 +73,11 @@ def test_trajectory_metrics_handle_constant_dimensions():
     assert np.isnan(metrics.pearson[2])
     assert "Pearson" in summary
     assert "RMSE" in summary
+
+
+def test_dmp_preserves_zero_displacement_dimension_without_overshoot():
+    phase = np.linspace(0.0, 1.0, 40)
+    reference = np.column_stack([0.1 + 0.03 * np.sin(2 * np.pi * phase), phase])
+    rollout = DiscreteDMP(n_time_steps=40, n_basis=12).fit([reference]).dynamic_rollout()
+
+    np.testing.assert_allclose(rollout[:, 0], reference[:, 0])
