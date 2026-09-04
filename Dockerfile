@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-matplotlib python3-yaml python3-joblib \
     ros-jazzy-ros-gz-sim ros-jazzy-ros-gz-bridge ros-jazzy-gz-ros2-control \
     ros-jazzy-controller-manager ros-jazzy-joint-state-publisher-gui \
+    ros-jazzy-xacro \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace/dobotmagician
