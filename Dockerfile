@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip python3-venv python3-numpy python3-scipy python3-sklearn \
     python3-matplotlib python3-yaml python3-joblib \
     ros-jazzy-ros-gz-sim ros-jazzy-ros-gz-bridge ros-jazzy-gz-ros2-control \
-    ros-jazzy-controller-manager ros-jazzy-joint-state-publisher-gui \
+    ros-jazzy-controller-manager ros-jazzy-joint-state-broadcaster \
+    ros-jazzy-joint-trajectory-controller ros-jazzy-joint-state-publisher-gui \
     ros-jazzy-xacro \
     && rm -rf /var/lib/apt/lists/*
 
