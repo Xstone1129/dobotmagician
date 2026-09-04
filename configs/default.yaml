@@ -11,6 +11,8 @@ model:
 plot:
   output_path: models/learned_trajectory.png
   comparison_output_path: models/trajectory_comparison.png
+  place_positions:
+    - [0.34, -0.16, 0.006]
 
 gmm_gmr_dmp:
   output_path: models/gmm_gmr_dmp.joblib
@@ -70,28 +72,3 @@ bgmm_gmr_promp:
     promp_basis: 25
     promp_basis_width: 0.08
     ridge_lambda: 0.000001
-
-coppeliasim:
-  host: 127.0.0.1
-  port: 23000
-  target_path: /GripperBase
-  tip_path: /GripperBase/GripCenter
-  left_gripper_joint_path: /GripperBase/magician_link_gripper_core_respondable/GripperJawLeftJoint
-  right_gripper_joint_path: /GripperBase/magician_link_gripper_core_respondable/GripperJawRightJoint
-  block_path: /PalletBlock
-  block_local_position: [0.0, 0.0, 0.0]
-  pick_position: [0.20, -0.16, 0.006]
-  place_positions:
-    - [0.34, -0.16, 0.006]
-  place_index: 1
-  gripper_signal: gripper
-  gripper_open_position: 0.010
-  gripper_closed_position: 0.000
-  pickup_threshold: 0.65
-  release_threshold: 0.35
-  release_mode: current_pose
-  playback_dt: 0.05
-  coordinate_scale: [1.0, 1.0, 1.0]
-  coordinate_offset: [0.0, 0.0, 0.0]
-  use_mean_trajectory: true
-  sample_index: 0

@@ -13,7 +13,7 @@
 - 已批准设计为 `docs/superpowers/specs/2026-07-10-spline-demo-documentation-addition-design.md`。
 - 必须同时修改 `reports/基于GMM-GMR运动基元的Dobot Magician夹爪码垛轨迹学习仿真研究.docx` 和 `docs/Dobot-Magician轨迹学习仿真项目接手与复现手册.md`。
 - 永久新增图片仅为 `docs/images/spline-demo-keypoints.png` 和 `docs/images/spline-demo-variants.png`。
-- 图片和文字必须以 `src/dobot_bgmm_promp/scripts/generate_palletizing_demos.py` 的当前行为为准。
+- 图片和文字必须以 `src/dobot_algorithms/scripts/generate_palletizing_demos.py` 的当前行为为准。
 - 事实值保持为 8 个关键点、150 个采样点、`NOISE_XY = 0.02`、`NOISE_Z = 0.02`、自然三次样条和夹爪值裁剪到 `[0, 1]`。
 - 内容保持简短、工程导向，不扩写 GMR、DMP、分段 DMP 或 ProMP 的轨迹生成理论。
 - 不修改 Demo 生成算法、默认参数、训练数据、模型、指标、场景或测试。
@@ -47,7 +47,7 @@
 
 **Read Only**
 
-- `src/dobot_bgmm_promp/scripts/generate_palletizing_demos.py`：关键点、扰动、样条和输出行为依据。
+- `src/dobot_algorithms/scripts/generate_palletizing_demos.py`：关键点、扰动、样条和输出行为依据。
 - `docs/superpowers/specs/2026-07-10-spline-demo-documentation-addition-design.md`：批准范围。
 - Word 当前正文、样式、目录、页眉页脚和图题格式。
 
@@ -60,7 +60,7 @@
 - Create: `.codex_tmp/spline-demo-docs/generate_figures.py`
 - Create: `docs/images/spline-demo-keypoints.png`
 - Create: `docs/images/spline-demo-variants.png`
-- Read: `src/dobot_bgmm_promp/scripts/generate_palletizing_demos.py`
+- Read: `src/dobot_algorithms/scripts/generate_palletizing_demos.py`
 
 **Interfaces:**
 
@@ -74,7 +74,7 @@ Run:
 ```powershell
 $env:PYTHONDONTWRITEBYTECODE = '1'
 @'
-from dobot_bgmm_promp.scripts import generate_palletizing_demos as g
+from dobot_algorithms.scripts import generate_palletizing_demos as g
 print('HOME=', g.HOME)
 print('PICK=', g.PICK)
 print('PLACE=', g.PLACE)
@@ -96,7 +96,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from dobot_bgmm_promp.scripts.generate_palletizing_demos import (
+from dobot_algorithms.scripts.generate_palletizing_demos import (
     NOISE_XY,
     NOISE_Z,
     _interpolate,
@@ -667,7 +667,7 @@ Expected: the commit contains only the final DOCX.
 
 **Files:**
 
-- Read: `src/dobot_bgmm_promp/scripts/generate_palletizing_demos.py`
+- Read: `src/dobot_algorithms/scripts/generate_palletizing_demos.py`
 - Read: `docs/Dobot-Magician轨迹学习仿真项目接手与复现手册.md`
 - Read: `reports/基于GMM-GMR运动基元的Dobot Magician夹爪码垛轨迹学习仿真研究.docx`
 - Read: `docs/images/spline-demo-keypoints.png`
@@ -686,7 +686,7 @@ Run:
 @'
 from pathlib import Path
 from docx import Document
-from dobot_bgmm_promp.scripts import generate_palletizing_demos as g
+from dobot_algorithms.scripts import generate_palletizing_demos as g
 
 md = Path('docs/Dobot-Magician轨迹学习仿真项目接手与复现手册.md').read_text(encoding='utf-8')
 doc = Document('reports/基于GMM-GMR运动基元的Dobot Magician夹爪码垛轨迹学习仿真研究.docx')

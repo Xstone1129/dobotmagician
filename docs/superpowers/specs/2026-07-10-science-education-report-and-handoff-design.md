@@ -44,7 +44,7 @@ must not appear as completed results.
 
 ### Project Evidence
 
-- Source code under `src/dobot_bgmm_promp/`
+- Source code under `src/dobot_algorithms/`
 - Runtime configuration in `configs/default.yaml`
 - Demonstrations in `data/demos_single_place/`
 - Saved models and figures under `models/`

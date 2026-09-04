@@ -166,3 +166,29 @@ Thumbs.db
 # data/
 # *.csv
 # *.json
+
+# ROS 2 / colcon generated workspaces
+/build/
+/install/
+/log/
+/ros2_ws/build/
+/ros2_ws/install/
+/ros2_ws/log/
+
+# Local simulation screenshots and temporary exports
+/gazebo_*.png
+/.codex_tmp_*
+
+# Original CAD/URDF drop copied for local reference; ROS package uses the
+# converted meshes under ros2_ws/src/dobot_magician_ros/meshes instead.
+/magician3D/
+
+# CoppeliaSim is not part of the ROS2/Gazebo branch.
+*.ttt
+*.ttm
+*coppeliasim*
+reports/evidence/coppeliasim/
+
+# Generated report archives and temporary exports.
+/reports/paper_*.zip
+/reports/images_to_insert.xml

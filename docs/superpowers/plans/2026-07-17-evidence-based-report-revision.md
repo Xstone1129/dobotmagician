@@ -30,9 +30,9 @@
 
 **Create**
 
-- `src/dobot_bgmm_promp/report_figures.py` - source-of-truth dataclasses, fact collection, report diagram rendering, scene composition, playback collage validation, and asset manifest writing.
-- `src/dobot_bgmm_promp/scripts/generate_report_figures.py` - `diagrams`, `scene`, and `playback` CLI subcommands.
-- `src/dobot_bgmm_promp/scripts/export_coppeliasim_inventory.py` - read-only Remote API object inventory exporter.
+- `src/dobot_algorithms/report_figures.py` - source-of-truth dataclasses, fact collection, report diagram rendering, scene composition, playback collage validation, and asset manifest writing.
+- `src/dobot_algorithms/scripts/generate_report_figures.py` - `diagrams`, `scene`, and `playback` CLI subcommands.
+- `src/dobot_algorithms/scripts/export_coppeliasim_inventory.py` - read-only Remote API object inventory exporter.
 - `tests/test_report_figures.py` - figure fact, rendering, manifest, scene, and playback validation tests.
 - `tests/test_export_coppeliasim_inventory.py` - read-only inventory exporter tests.
 - `reports/evidence/coppeliasim/scene-overview.png` - real CoppeliaSim scene screenshot captured through Orca Computer Use.
@@ -63,12 +63,12 @@
 - `docs/superpowers/specs/2026-07-17-evidence-based-report-revision-design.md`
 - `configs/default.yaml`
 - `data/demos_single_place/*.csv`
-- `src/dobot_bgmm_promp/gmr_primitives.py`
-- `src/dobot_bgmm_promp/coppeliasim_client.py`
-- `src/dobot_bgmm_promp/scripts/learn.py`
-- `src/dobot_bgmm_promp/scripts/play_coppeliasim.py`
-- `src/dobot_bgmm_promp/scripts/generate_palletizing_demos.py`
-- `src/dobot_bgmm_promp/scripts/create_gripper_palletizing_scene.py`
+- `src/dobot_algorithms/gmr_primitives.py`
+- `src/dobot_algorithms/coppeliasim_client.py`
+- `src/dobot_algorithms/scripts/learn.py`
+- `src/dobot_algorithms/scripts/play_coppeliasim.py`
+- `src/dobot_algorithms/scripts/generate_palletizing_demos.py`
+- `src/dobot_algorithms/scripts/create_gripper_palletizing_scene.py`
 - `models/algorithm_metrics.csv`, `models/algorithm_metrics.md`, `models/*.png`, `models/*.joblib`
 - `scenes/gripper_palletizing.ttt`
 - `C:/Users/Administrator/OneDrive/文档/科教/刘暾东 等 - 2024 - 基于分段动态运动基元的机械臂轨迹学习与避障方法.pdf`
@@ -232,7 +232,7 @@ No commit. All Task 1 outputs are ignored task-local evidence.
 **Files:**
 
 - Create: `tests/test_report_figures.py`
-- Create: `src/dobot_bgmm_promp/report_figures.py`
+- Create: `src/dobot_algorithms/report_figures.py`
 - Modify: `pyproject.toml`
 
 - [ ] **Step 1: Add failing baseline-fact tests**
@@ -247,7 +247,7 @@ import shutil
 import pytest
 from PIL import Image
 
-from dobot_bgmm_promp.report_figures import (
+from dobot_algorithms.report_figures import (
     collect_report_facts,
     compose_playback_frames,
     render_algorithm_structures,
@@ -287,7 +287,7 @@ python -m pytest tests/test_report_figures.py::test_default_report_facts_match_v
   -q -p no:cacheprovider
 ```
 
-Expected: FAIL with `ModuleNotFoundError: No module named 'dobot_bgmm_promp.report_figures'`.
+Expected: FAIL with `ModuleNotFoundError: No module named 'dobot_algorithms.report_figures'`.
 
 - [ ] **Step 3: Add Pillow and the public fact dataclasses**
 
@@ -297,7 +297,7 @@ In `pyproject.toml`, add:
     "Pillow>=10",
 ```
 
-Create `src/dobot_bgmm_promp/report_figures.py` with these public types and imports:
+Create `src/dobot_algorithms/report_figures.py` with these public types and imports:
 
 ```python
 from __future__ import annotations
@@ -312,8 +312,8 @@ import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 from PIL import Image, ImageDraw, ImageFont
 
-from dobot_bgmm_promp.io import load_config, load_demonstrations, project_path
-from dobot_bgmm_promp.scripts.learn import ALGORITHM_BUILDERS
+from dobot_algorithms.io import load_config, load_demonstrations, project_path
+from dobot_algorithms.scripts.learn import ALGORITHM_BUILDERS
 
 
 @dataclass(frozen=True)
@@ -495,7 +495,7 @@ Expected: `1 passed`.
 - [ ] **Step 6: Commit the fact layer**
 
 ```powershell
-git add -- pyproject.toml src/dobot_bgmm_promp/report_figures.py tests/test_report_figures.py
+git add -- pyproject.toml src/dobot_algorithms/report_figures.py tests/test_report_figures.py
 git diff --cached --check
 git commit -m "feat: add evidence-backed report figure facts"
 ```
@@ -509,8 +509,8 @@ Expected: the commit contains only the dependency, dataclasses/fact collection, 
 **Files:**
 
 - Modify: `tests/test_report_figures.py`
-- Modify: `src/dobot_bgmm_promp/report_figures.py`
-- Create: `src/dobot_bgmm_promp/scripts/generate_report_figures.py`
+- Modify: `src/dobot_algorithms/report_figures.py`
+- Create: `src/dobot_algorithms/scripts/generate_report_figures.py`
 - Modify: `pyproject.toml`
 - Create: `reports/figures/figure-2-1-project-data-flow.png`
 - Create: `reports/figures/figure-2-1-project-data-flow.svg`
@@ -525,7 +525,7 @@ Expected: the commit contains only the dependency, dataclasses/fact collection, 
 Append to `tests/test_report_figures.py`:
 
 ```python
-from dobot_bgmm_promp.report_figures import (
+from dobot_algorithms.report_figures import (
     render_playback_state_machine,
     render_project_data_flow,
     update_asset_manifest,
@@ -774,14 +774,14 @@ def _render_project_data_flow_impl(facts, output_stem, font_path):
         output_stem,
         (
             "configs/default.yaml",
-            "src/dobot_bgmm_promp/io.py",
-            "src/dobot_bgmm_promp/scripts/learn.py",
-            "src/dobot_bgmm_promp/scripts/play_coppeliasim.py",
+            "src/dobot_algorithms/io.py",
+            "src/dobot_algorithms/scripts/learn.py",
+            "src/dobot_algorithms/scripts/play_coppeliasim.py",
         ),
         (
-            "dobot_bgmm_promp.io.load_demonstrations",
-            "dobot_bgmm_promp.scripts.learn.ALGORITHM_BUILDERS",
-            "dobot_bgmm_promp.scripts.play_coppeliasim._model_path",
+            "dobot_algorithms.io.load_demonstrations",
+            "dobot_algorithms.scripts.learn.ALGORITHM_BUILDERS",
+            "dobot_algorithms.scripts.play_coppeliasim._model_path",
         ),
     )
 
@@ -819,15 +819,15 @@ def _render_playback_state_machine_impl(facts, output_stem, font_path):
         output_stem,
         (
             "configs/default.yaml",
-            "src/dobot_bgmm_promp/scripts/play_coppeliasim.py",
-            "src/dobot_bgmm_promp/coppeliasim_client.py",
+            "src/dobot_algorithms/scripts/play_coppeliasim.py",
+            "src/dobot_algorithms/coppeliasim_client.py",
         ),
         (
-            "dobot_bgmm_promp.scripts.play_coppeliasim._model_path",
-            "dobot_bgmm_promp.coppeliasim_client.CoppeliaDobotClient.play_cartesian_trajectory",
-            "dobot_bgmm_promp.coppeliasim_client.CoppeliaDobotClient._set_gripper_joints",
-            "dobot_bgmm_promp.coppeliasim_client.CoppeliaDobotClient._attach_block",
-            "dobot_bgmm_promp.coppeliasim_client.CoppeliaDobotClient._release_block",
+            "dobot_algorithms.scripts.play_coppeliasim._model_path",
+            "dobot_algorithms.coppeliasim_client.CoppeliaDobotClient.play_cartesian_trajectory",
+            "dobot_algorithms.coppeliasim_client.CoppeliaDobotClient._set_gripper_joints",
+            "dobot_algorithms.coppeliasim_client.CoppeliaDobotClient._attach_block",
+            "dobot_algorithms.coppeliasim_client.CoppeliaDobotClient._release_block",
         ),
     )
 ```
@@ -868,17 +868,17 @@ def _render_algorithm_structures_impl(facts, output_stem, font_path):
         output_stem,
         (
             "configs/default.yaml",
-            "src/dobot_bgmm_promp/gmr_primitives.py",
-            "src/dobot_bgmm_promp/scripts/learn.py",
+            "src/dobot_algorithms/gmr_primitives.py",
+            "src/dobot_algorithms/scripts/learn.py",
         ),
         (
-            "dobot_bgmm_promp.scripts.learn.ALGORITHM_BUILDERS",
-            "dobot_bgmm_promp.gmr_primitives.GMMGMRDMP",
-            "dobot_bgmm_promp.gmr_primitives.IncGMMGMRDMP",
-            "dobot_bgmm_promp.gmr_primitives.GMMGMRSegmentedDMP",
-            "dobot_bgmm_promp.gmr_primitives.BGMMGMRProMP",
-            "dobot_bgmm_promp.gmr_primitives._segmented_dmp_rollout",
-            "dobot_bgmm_promp.gmr_primitives.BGMMGMRProMP._promp_reconstruct",
+            "dobot_algorithms.scripts.learn.ALGORITHM_BUILDERS",
+            "dobot_algorithms.gmr_primitives.GMMGMRDMP",
+            "dobot_algorithms.gmr_primitives.IncGMMGMRDMP",
+            "dobot_algorithms.gmr_primitives.GMMGMRSegmentedDMP",
+            "dobot_algorithms.gmr_primitives.BGMMGMRProMP",
+            "dobot_algorithms.gmr_primitives._segmented_dmp_rollout",
+            "dobot_algorithms.gmr_primitives.BGMMGMRProMP._promp_reconstruct",
         ),
     )
 ```
@@ -909,18 +909,18 @@ Use these source symbols in asset records:
 
 ```python
 (
-    "dobot_bgmm_promp.io.load_demonstrations",
-    "dobot_bgmm_promp.scripts.learn.ALGORITHM_BUILDERS",
-    "dobot_bgmm_promp.gmr_primitives._segmented_dmp_rollout",
-    "dobot_bgmm_promp.gmr_primitives.BGMMGMRProMP._promp_reconstruct",
-    "dobot_bgmm_promp.scripts.play_coppeliasim._model_path",
-    "dobot_bgmm_promp.coppeliasim_client.CoppeliaDobotClient.play_cartesian_trajectory",
+    "dobot_algorithms.io.load_demonstrations",
+    "dobot_algorithms.scripts.learn.ALGORITHM_BUILDERS",
+    "dobot_algorithms.gmr_primitives._segmented_dmp_rollout",
+    "dobot_algorithms.gmr_primitives.BGMMGMRProMP._promp_reconstruct",
+    "dobot_algorithms.scripts.play_coppeliasim._model_path",
+    "dobot_algorithms.coppeliasim_client.CoppeliaDobotClient.play_cartesian_trajectory",
 )
 ```
 
 - [ ] **Step 4: Add the tested CLI**
 
-Create `src/dobot_bgmm_promp/scripts/generate_report_figures.py`:
+Create `src/dobot_algorithms/scripts/generate_report_figures.py`:
 
 ```python
 from __future__ import annotations
@@ -929,7 +929,7 @@ import argparse
 from collections.abc import Sequence
 from pathlib import Path
 
-from dobot_bgmm_promp.report_figures import (
+from dobot_algorithms.report_figures import (
     collect_report_facts,
     compose_playback_frames,
     compose_scene_evidence,
@@ -998,7 +998,7 @@ if __name__ == "__main__":
 Add to `[project.scripts]`:
 
 ```toml
-dobot-report-figures = "dobot_bgmm_promp.scripts.generate_report_figures:main"
+dobot-report-figures = "dobot_algorithms.scripts.generate_report_figures:main"
 ```
 
 Do not add an `all` command and do not generate placeholders.
@@ -1009,7 +1009,7 @@ Run:
 
 ```powershell
 python -m pytest tests/test_report_figures.py -q -p no:cacheprovider
-python -m dobot_bgmm_promp.scripts.generate_report_figures `
+python -m dobot_algorithms.scripts.generate_report_figures `
   --manifest reports/figures/manifest.json `
   diagrams `
   --config configs/default.yaml `
@@ -1034,8 +1034,8 @@ Expected: Chinese glyphs render correctly; no text or arrow overlaps; `38/38/37/
 
 ```powershell
 git add -- pyproject.toml `
-  src/dobot_bgmm_promp/report_figures.py `
-  src/dobot_bgmm_promp/scripts/generate_report_figures.py `
+  src/dobot_algorithms/report_figures.py `
+  src/dobot_algorithms/scripts/generate_report_figures.py `
   tests/test_report_figures.py `
   reports/figures/figure-2-1-project-data-flow.png `
   reports/figures/figure-2-1-project-data-flow.svg `
@@ -1057,9 +1057,9 @@ Expected: no model, data, scene, DOCX, or rejected supplemental file is staged.
 **Files:**
 
 - Create: `tests/test_export_coppeliasim_inventory.py`
-- Create: `src/dobot_bgmm_promp/scripts/export_coppeliasim_inventory.py`
+- Create: `src/dobot_algorithms/scripts/export_coppeliasim_inventory.py`
 - Modify: `tests/test_report_figures.py`
-- Modify: `src/dobot_bgmm_promp/report_figures.py`
+- Modify: `src/dobot_algorithms/report_figures.py`
 - Modify: `pyproject.toml`
 - Create: `reports/evidence/coppeliasim/scene-overview.png`
 - Create: `reports/evidence/coppeliasim/object-inventory.json`
@@ -1071,7 +1071,7 @@ Expected: no model, data, scene, DOCX, or rejected supplemental file is staged.
 Create `tests/test_export_coppeliasim_inventory.py`:
 
 ```python
-from dobot_bgmm_promp.scripts.export_coppeliasim_inventory import (
+from dobot_algorithms.scripts.export_coppeliasim_inventory import (
     collect_object_inventory,
     required_object_paths,
 )
@@ -1133,7 +1133,7 @@ Expected: FAIL because the exporter module does not exist.
 
 - [ ] **Step 3: Implement the read-only exporter**
 
-Create `src/dobot_bgmm_promp/scripts/export_coppeliasim_inventory.py` with these functions:
+Create `src/dobot_algorithms/scripts/export_coppeliasim_inventory.py` with these functions:
 
 ```python
 from __future__ import annotations
@@ -1144,7 +1144,7 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 
-from dobot_bgmm_promp.io import load_config, project_path
+from dobot_algorithms.io import load_config, project_path
 
 
 def required_object_paths(config: dict) -> dict[str, str]:
@@ -1240,7 +1240,7 @@ This module may call only `RemoteAPIClient`, `client.require("sim")`, `sim.getOb
 Add to `[project.scripts]`:
 
 ```toml
-dobot-export-scene-inventory = "dobot_bgmm_promp.scripts.export_coppeliasim_inventory:main"
+dobot-export-scene-inventory = "dobot_algorithms.scripts.export_coppeliasim_inventory:main"
 ```
 
 - [ ] **Step 4: Add the failing scene-composition test**
@@ -1248,7 +1248,7 @@ dobot-export-scene-inventory = "dobot_bgmm_promp.scripts.export_coppeliasim_inve
 Append to `tests/test_report_figures.py`:
 
 ```python
-from dobot_bgmm_promp.report_figures import compose_scene_evidence
+from dobot_algorithms.report_figures import compose_scene_evidence
 
 
 def test_scene_composition_requires_all_objects_and_labels_inventory(tmp_path: Path):
@@ -1346,7 +1346,7 @@ Run:
 python -m pytest tests/test_export_coppeliasim_inventory.py tests/test_report_figures.py `
   -q -p no:cacheprovider
 rg -n "startSimulation|stopSimulation|\.set[A-Z]" `
-  src/dobot_bgmm_promp/scripts/export_coppeliasim_inventory.py
+  src/dobot_algorithms/scripts/export_coppeliasim_inventory.py
 ```
 
 Expected: all tests pass; `rg` prints nothing.
@@ -1400,11 +1400,11 @@ Expected: the saved PNG is a real screen capture of `gripper_palletizing.ttt`, w
 Run while the scene is open:
 
 ```powershell
-python -m dobot_bgmm_promp.scripts.export_coppeliasim_inventory `
+python -m dobot_algorithms.scripts.export_coppeliasim_inventory `
   --config configs/default.yaml `
   --output reports/evidence/coppeliasim/object-inventory.json
 
-python -m dobot_bgmm_promp.scripts.generate_report_figures `
+python -m dobot_algorithms.scripts.generate_report_figures `
   --manifest reports/figures/manifest.json `
   scene `
   --scene-image reports/evidence/coppeliasim/scene-overview.png `
@@ -1420,8 +1420,8 @@ Visually confirm the screenshot is real, unobstructed, and matches the JSON obje
 
 ```powershell
 git add -- pyproject.toml `
-  src/dobot_bgmm_promp/report_figures.py `
-  src/dobot_bgmm_promp/scripts/export_coppeliasim_inventory.py `
+  src/dobot_algorithms/report_figures.py `
+  src/dobot_algorithms/scripts/export_coppeliasim_inventory.py `
   tests/test_report_figures.py `
   tests/test_export_coppeliasim_inventory.py `
   reports/evidence/coppeliasim/scene-overview.png `
@@ -1441,7 +1441,7 @@ Expected: no scene `.ttt` change and no generated fake image is staged.
 **Files:**
 
 - Modify: `tests/test_report_figures.py`
-- Modify: `src/dobot_bgmm_promp/report_figures.py`
+- Modify: `src/dobot_algorithms/report_figures.py`
 - Read later: `reports/evidence/playback/frames.json`
 - Read later: `reports/evidence/playback/frame-01.png` through `frame-08.png`
 - Create later: `reports/figures/figure-5-1-playback-keyframes.png`
@@ -1634,7 +1634,7 @@ Run:
 
 ```powershell
 python -m pytest tests/test_report_figures.py -q -p no:cacheprovider
-python -m dobot_bgmm_promp.scripts.generate_report_figures `
+python -m dobot_algorithms.scripts.generate_report_figures `
   playback `
   --frames-manifest reports/evidence/playback/frames.json
 ```
@@ -1644,7 +1644,7 @@ Expected: tests pass; the CLI fails with a missing-file error because the user's
 - [ ] **Step 6: Commit only the validation capability**
 
 ```powershell
-git add -- src/dobot_bgmm_promp/report_figures.py tests/test_report_figures.py
+git add -- src/dobot_algorithms/report_figures.py tests/test_report_figures.py
 git diff --cached --check
 git commit -m "feat: validate real playback report frames"
 ```
@@ -1710,7 +1710,7 @@ Insert:
 Document:
 
 ```powershell
-python -m dobot_bgmm_promp.scripts.generate_palletizing_demos `
+python -m dobot_algorithms.scripts.generate_palletizing_demos `
   --output-dir <空目录> `
   --n-per-pose 8 `
   --seed 42
@@ -1723,15 +1723,15 @@ State that the generator appends numbered files, so exact reconstruction require
 Add commands for:
 
 ```powershell
-python -m dobot_bgmm_promp.scripts.generate_report_figures `
+python -m dobot_algorithms.scripts.generate_report_figures `
   --manifest reports/figures/manifest.json `
   diagrams --config configs/default.yaml --output-dir reports/figures
 
-python -m dobot_bgmm_promp.scripts.export_coppeliasim_inventory `
+python -m dobot_algorithms.scripts.export_coppeliasim_inventory `
   --config configs/default.yaml `
   --output reports/evidence/coppeliasim/object-inventory.json
 
-python -m dobot_bgmm_promp.scripts.generate_report_figures `
+python -m dobot_algorithms.scripts.generate_report_figures `
   scene `
   --scene-image reports/evidence/coppeliasim/scene-overview.png `
   --inventory reports/evidence/coppeliasim/object-inventory.json
@@ -2273,11 +2273,11 @@ After `52DC0ACB` and before `5E96EEA0`, insert code-formatted paragraphs cloned 
 ```text
 python -m pytest tests/test_bgmm_promp.py -q -p no:cacheprovider
 python -m pytest -q -p no:cacheprovider
-python -m dobot_bgmm_promp.scripts.generate_palletizing_demos --output-dir <空目录> --n-per-pose 8 --seed 42
-python -m dobot_bgmm_promp.scripts.learn --config configs/default.yaml
-python -m dobot_bgmm_promp.scripts.generate_report_figures --manifest reports/figures/manifest.json diagrams --config configs/default.yaml --output-dir reports/figures
-python -m dobot_bgmm_promp.scripts.export_coppeliasim_inventory --config configs/default.yaml --output reports/evidence/coppeliasim/object-inventory.json
-python -m dobot_bgmm_promp.scripts.play_coppeliasim --config configs/default.yaml --place-index 1
+python -m dobot_algorithms.scripts.generate_palletizing_demos --output-dir <空目录> --n-per-pose 8 --seed 42
+python -m dobot_algorithms.scripts.learn --config configs/default.yaml
+python -m dobot_algorithms.scripts.generate_report_figures --manifest reports/figures/manifest.json diagrams --config configs/default.yaml --output-dir reports/figures
+python -m dobot_algorithms.scripts.export_coppeliasim_inventory --config configs/default.yaml --output reports/evidence/coppeliasim/object-inventory.json
+python -m dobot_algorithms.scripts.play_coppeliasim --config configs/default.yaml --place-index 1
 ```
 
 Remove duplicate old command paragraphs if the same command already follows.
@@ -2926,7 +2926,7 @@ Allowed `model_id` values are the four keys in `ALGORITHM_BUILDERS`. Do not add 
 Run:
 
 ```powershell
-python -m dobot_bgmm_promp.scripts.generate_report_figures `
+python -m dobot_algorithms.scripts.generate_report_figures `
   --manifest reports/figures/manifest.json `
   playback `
   --frames-manifest reports/evidence/playback/frames.json `

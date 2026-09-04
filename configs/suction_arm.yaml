@@ -1,5 +1,4 @@
-# Full Dobot Magician + suction cup. The original configs/default.yaml and
-# scenes/gripper_palletizing.ttt remain the lightweight gripper-only baseline.
+# Full Dobot Magician + suction cup learning configuration.
 data:
   demos_dir: data/demos_suction_turn
   time_column: t
@@ -8,46 +7,12 @@ data:
 
 model:
   algorithm: compare
-  active_algorithm: bgmm_gmr_promp
+  active_algorithm: gmm_gmr_dmp
 
 plot:
   output_path: models/suction_arm/learned_trajectory.png
   comparison_output_path: models/suction_arm/trajectory_comparison.png
   intermediate_output_dir: models/suction_arm/intermediate
-
-scene:
-  coppeliasim: C:\Program Files\CoppeliaRobotics\CoppeliaSimEdu\coppeliaSim.exe
-  source_scene: C:\Users\Administrator\Desktop\dobotmagician.before_ik_backup.ttt
-  suction_model: C:\Program Files\CoppeliaRobotics\CoppeliaSimEdu\models\components\grippers\suction pad.ttm
-  output: scenes/dobot_magician_suction.ttt
-
-coppeliasim:
-  host: 127.0.0.1
-  port: 23000
-  target_path: /target
-  tip_path: /SuctionTip
-  arm_joint_paths: [/magician_joint_1, /magician_joint_2, /magician_joint_3, /magician_joint_4]
-  arm_base_position: [-0.08315, 0.0, 0.13155]
-  block_path: /PalletBlock
-  block_rest_height: 0.021
-  # Both stations stay outside the base footprint and inside the Dobot reach.
-  pick_position: [-0.20, -0.14, 0.030]
-  place_positions:
-    - [0.08, 0.16, 0.030]
-  place_index: 1
-  gripper_signal: suction_active
-  pickup_threshold: 0.65
-  release_threshold: 0.35
-  release_mode: snap_to_place
-  playback_dt: 0.05
-  coordinate_scale: [1.0, 1.0, 1.0]
-  coordinate_offset: [0.0, 0.0, 0.0]
-  workspace_max_radius: 0.27
-  workspace_z_bounds: [0.030, 0.32]
-  base_exclusion_radius: 0.105
-  base_clearance_z: 0.245
-  use_scene_ik: true
-  use_mean_trajectory: true
 
 gmm_gmr_dmp:
   output_path: models/suction_arm/gmm_gmr_dmp.joblib

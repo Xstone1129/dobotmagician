@@ -43,7 +43,7 @@
 
 - `docs/superpowers/specs/2026-07-10-science-education-report-and-handoff-design.md` - approved requirements.
 - `README.md`, `pyproject.toml`, `configs/default.yaml` - installation and runtime behavior.
-- `src/dobot_bgmm_promp/**/*.py` - implementation evidence.
+- `src/dobot_algorithms/**/*.py` - implementation evidence.
 - `tests/test_bgmm_promp.py` - automated validation evidence.
 - `models/algorithm_metrics.csv`, `models/algorithm_metrics.md`, `models/*.png` - current quantitative results.
 - `C:\Users\Administrator\OneDrive\文档\科教\许斯烔科教报告.docx` - retained Word template.
@@ -58,11 +58,11 @@
 - Create: `.codex_tmp/science-education-docs/evidence/manifest.md`
 - Create: `.codex_tmp/science-education-docs/evidence/metrics.csv`
 - Read: `configs/default.yaml`
-- Read: `src/dobot_bgmm_promp/scripts/learn.py`
-- Read: `src/dobot_bgmm_promp/gmr_primitives.py`
-- Read: `src/dobot_bgmm_promp/scripts/generate_palletizing_demos.py`
-- Read: `src/dobot_bgmm_promp/scripts/play_coppeliasim.py`
-- Read: `src/dobot_bgmm_promp/coppeliasim_client.py`
+- Read: `src/dobot_algorithms/scripts/learn.py`
+- Read: `src/dobot_algorithms/gmr_primitives.py`
+- Read: `src/dobot_algorithms/scripts/generate_palletizing_demos.py`
+- Read: `src/dobot_algorithms/scripts/play_coppeliasim.py`
+- Read: `src/dobot_algorithms/coppeliasim_client.py`
 - Read: `tests/test_bgmm_promp.py`
 - Read: `models/algorithm_metrics.csv`
 - Read: `C:\Users\Administrator\OneDrive\文档\科教\Xstone答辩材料2026_07_06\皮尔逊系数表.csv`
@@ -276,8 +276,8 @@ No commit is expected for Task 2 because all outputs are under `.codex_tmp/`.
 - Read: `README.md`
 - Read: `pyproject.toml`
 - Read: `configs/default.yaml`
-- Read: `src/dobot_bgmm_promp/scripts/*.py`
-- Read: `src/dobot_bgmm_promp/*.py`
+- Read: `src/dobot_algorithms/scripts/*.py`
+- Read: `src/dobot_algorithms/*.py`
 
 **Interfaces:**
 
@@ -315,7 +315,7 @@ Include:
 - one prominent statement that the project is simulation-only;
 - a short “能做 / 不能做” comparison;
 - plain-language explanations of GMM, GMR, DMP, segmented DMP, incremental GMM, BGMM, and ProMP;
-- exact links to `src/dobot_bgmm_promp/gmr_primitives.py`, `src/dobot_bgmm_promp/gmr.py`, `src/dobot_bgmm_promp/dmp.py`, and `src/dobot_bgmm_promp/incremental_gmm.py`.
+- exact links to `src/dobot_algorithms/gmr_primitives.py`, `src/dobot_algorithms/gmr.py`, `src/dobot_algorithms/dmp.py`, and `src/dobot_algorithms/incremental_gmm.py`.
 
 Expected: no formula is required to follow the reproduction procedure; every algorithm name maps to an exact class/file.
 
@@ -341,8 +341,8 @@ Expected: a beginner understands where the prompt should be located and how to a
 Use these commands and describe their outputs:
 
 ```powershell
-python -m dobot_bgmm_promp.scripts.learn --config configs/default.yaml
-python -m dobot_bgmm_promp.scripts.play_coppeliasim --config configs/default.yaml --place-index 1
+python -m dobot_algorithms.scripts.learn --config configs/default.yaml
+python -m dobot_algorithms.scripts.play_coppeliasim --config configs/default.yaml --place-index 1
 ```
 
 Explain that `model.algorithm: compare` trains all four models and that `model.active_algorithm` selects playback. List all four legal IDs exactly as implemented.
@@ -354,7 +354,7 @@ Expected: the reader can identify the four `.joblib` files, four single-model pl
 Document the generator command only with a fresh output directory:
 
 ```powershell
-python -m dobot_bgmm_promp.scripts.generate_palletizing_demos `
+python -m dobot_algorithms.scripts.generate_palletizing_demos `
   --output-dir .codex_tmp/reproduction-demos `
   --n-per-pose 5 `
   --seed 42
@@ -436,7 +436,7 @@ Run from the repository root:
 ```powershell
 $env:PYTHONDONTWRITEBYTECODE = '1'
 python -m pytest -q -p no:cacheprovider
-python -m dobot_bgmm_promp.scripts.generate_palletizing_demos `
+python -m dobot_algorithms.scripts.generate_palletizing_demos `
   --output-dir .codex_tmp/reproduction-demos `
   --n-per-pose 2 `
   --seed 42

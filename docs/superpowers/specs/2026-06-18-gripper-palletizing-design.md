@@ -67,7 +67,7 @@ Geometry:
 
 ## Synthetic Data Generation
 
-`src/dobot_bgmm_promp/scripts/generate_palletizing_demos.py` generates:
+`src/dobot_algorithms/scripts/generate_palletizing_demos.py` generates:
 
 - 6 placement positions
 - 5 variants per position
@@ -77,7 +77,7 @@ Geometry:
 
 ## Scene Generation
 
-`src/dobot_bgmm_promp/scripts/create_gripper_palletizing_scene.py` opens:
+`src/dobot_algorithms/scripts/create_gripper_palletizing_scene.py` opens:
 
 `C:\Users\Administrator\Desktop\dobotmagician.before_ik_backup.ttt`
 
@@ -88,7 +88,7 @@ adds the block and markers, and saves:
 
 ## Playback
 
-`src/dobot_bgmm_promp/coppeliasim_client.py`:
+`src/dobot_algorithms/coppeliasim_client.py`:
 
 - Moves `/GripperBase` through Cartesian trajectory points.
 - Sends `sim.setFloatSignal("gripper", value)`.

@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="dobot_magician">
+  <!-- Geometry and frames are migrated from magician3D/.../urdf/demo.urdf. -->
+  <xacro:property name="pi_val" value="3.14159265"/>
+  <xacro:property name="half_pi" value="1.570796325"/>
+  <material name="white"><color rgba="1 1 1 1"/></material>
+  <material name="grey"><color rgba="0.9 0.9 0.9 1"/></material>
+  <material name="black"><color rgba="0 0 0 1"/></material>
+
+  <!-- Absolute package paths load consistently in RViz2 and Gazebo Sim. -->
+  <xacro:macro name="mesh_link" params="name visual collision material rgba mass ixx iyy izz">
+    <link name="${name}">
+      <visual><geometry><mesh filename="file://$(find dobot_magician_ros)/meshes/${visual}"/></geometry><material name="${material}"><color rgba="${rgba}"/></material></visual>
+      <collision><geometry><mesh filename="file://$(find dobot_magician_ros)/meshes/${collision}"/></geometry></collision>
+      <inertial><mass value="${mass}"/><inertia ixx="${ixx}" ixy="0" ixz="0" iyy="${iyy}" iyz="0" izz="${izz}"/></inertial>
+    </link>
+  </xacro:macro>
+
+  <xacro:mesh_link name="base_link" visual="base_link.STL" collision="base_link.STL" material="white" rgba="1 1 1 1" mass="1.20" ixx="0.004" iyy="0.004" izz="0.006"/>
+  <!-- STL visuals have no embedded Collada material, so Gazebo can apply the URDF colors reliably. -->
+  <xacro:mesh_link name="link_1" visual="link_1.STL" collision="link_1.STL" material="white" rgba="1 1 1 1" mass="0.45" ixx="0.0015" iyy="0.0015" izz="0.002"/>
+  <xacro:mesh_link name="link_2" visual="link_2.STL" collision="link_2.STL" material="white" rgba="1 1 1 1" mass="0.35" ixx="0.002" iyy="0.002" izz="0.003"/>
+  <!-- link_3/link_4 retain controller names and use source link_5/link_6 meshes. -->
+  <xacro:mesh_link name="link_3" visual="link_5.STL" collision="link_5.STL" material="white" rgba="1 1 1 1" mass="0.30" ixx="0.002" iyy="0.002" izz="0.003"/>
+  <xacro:mesh_link name="link_4" visual="link_6.STL" collision="link_6.STL" material="grey" rgba="0.55 0.58 0.62 1" mass="0.12" ixx="0.0002" iyy="0.0002" izz="0.0003"/>
+
+  <joint name="joint_1" type="revolute">
+    <parent link="base_link"/><child link="link_1"/><origin xyz="0 0 0.024" rpy="0 0 0"/><axis xyz="0 0 1"/>
+    <limit lower="-${pi_val}" upper="${pi_val}" effort="150" velocity="3.15"/><dynamics damping="0.15" friction="0.05"/>
+  </joint>
+  <joint name="joint_2" type="revolute">
+    <parent link="link_1"/><child link="link_2"/><origin xyz="-0.01175 0 0.114" rpy="${half_pi} 0 -${half_pi}"/><axis xyz="0 0 1"/>
+    <limit lower="0" upper="${half_pi}" effort="150" velocity="3.15"/><dynamics damping="0.15" friction="0.05"/>
+  </joint>
+  <!-- Source joint_5 mapped to controller joint_3. -->
+  <joint name="joint_3" type="revolute">
+    <parent link="link_2"/><child link="link_3"/><origin xyz="0.02699 0.13228 -0.01175" rpy="0 ${pi_val} 0"/><axis xyz="0 0 1"/>
+    <limit lower="0" upper="${half_pi}" effort="150" velocity="3.15"/><dynamics damping="0.15" friction="0.05"/>
+  </joint>
+  <!-- Source joint_6 mapped to controller joint_4. -->
+  <joint name="joint_4" type="revolute">
+    <parent link="link_3"/><child link="link_4"/><origin xyz="0.07431 -0.12684 0" rpy="0 ${pi_val} 0"/><axis xyz="0 0 1"/>
+    <limit lower="-0.5" upper="0.5" effort="150" velocity="3.15"/><dynamics damping="0.10" friction="0.03"/>
+  </joint>
+
+  <!-- Source joint_7: fixed suction cup with the source -1.57 rad X rotation. -->
+  <joint name="joint_7" type="fixed">
+    <parent link="link_4"/><child link="link_7"/><origin xyz="-0.0328 -0.02 0" rpy="-1.57 0 0"/>
+  </joint>
+  <link name="link_7">
+    <visual><geometry><cylinder length="0.012" radius="0.020"/></geometry><material name="black"/></visual>
+    <collision><geometry><cylinder length="0.012" radius="0.028"/></geometry></collision>
+    <inertial><origin xyz="0 0 -0.006"/><mass value="0.03"/><inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/></inertial>
+  </link>
+
+  <ros2_control name="DobotGazeboSystem" type="system">
+    <hardware><plugin>gz_ros2_control/GazeboSimSystem</plugin></hardware>
+    <joint name="joint_1"><command_interface name="position"/><state_interface name="position"><param name="initial_value">0.0</param></state_interface><state_interface name="velocity"/></joint>
+    <joint name="joint_2"><command_interface name="position"/><state_interface name="position"><param name="initial_value">0.0</param></state_interface><state_interface name="velocity"/></joint>
+    <joint name="joint_3"><command_interface name="position"/><state_interface name="position"><param name="initial_value">0.0</param></state_interface><state_interface name="velocity"/></joint>
+    <joint name="joint_4"><command_interface name="position"/><state_interface name="position"><param name="initial_value">0.0</param></state_interface><state_interface name="velocity"/></joint>
+  </ros2_control>
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin"><parameters>$(find dobot_magician_ros)/config/controllers.yaml</parameters></plugin>
+  </gazebo>
+  <!-- Gazebo material overrides prevent mesh importers from falling back to white. -->
+  <gazebo reference="base_link"><material>Gazebo/White</material></gazebo>
+  <gazebo reference="link_1"><material>Gazebo/White</material></gazebo>
+  <gazebo reference="link_2"><material>Gazebo/White</material></gazebo>
+  <gazebo reference="link_3"><material>Gazebo/White</material></gazebo>
+  <gazebo reference="link_4"><material>Gazebo/Grey</material></gazebo>
+  <gazebo reference="link_7"><material>Gazebo/Black</material></gazebo>
+  <gazebo reference="link_7"><mu1>0.9</mu1><mu2>0.9</mu2><kp>1000000</kp><kd>100</kd></gazebo>
+</robot>

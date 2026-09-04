@@ -57,7 +57,7 @@
 报告和接手手册记录当前 8 条合成轨迹的精确基线命令：
 
 ```powershell
-python -m dobot_bgmm_promp.scripts.generate_palletizing_demos `
+python -m dobot_algorithms.scripts.generate_palletizing_demos `
   --output-dir <空目录> `
   --n-per-pose 8 `
   --seed 42

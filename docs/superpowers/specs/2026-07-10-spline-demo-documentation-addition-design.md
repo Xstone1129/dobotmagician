@@ -11,7 +11,7 @@
 
 ## 事实依据与表述边界
 
-说明内容以 `src/dobot_bgmm_promp/scripts/generate_palletizing_demos.py` 为唯一实现依据：
+说明内容以 `src/dobot_algorithms/scripts/generate_palletizing_demos.py` 为唯一实现依据：
 
 - 一条 Demo 由 8 个动作关键点构成：HOME、取物点上方、PICK、抬升、放置点上方、PLACE、离开放置点、返回 HOME。
 - 夹爪关键状态为 `[0, 0, 1, 1, 1, 0, 0, 0]`。

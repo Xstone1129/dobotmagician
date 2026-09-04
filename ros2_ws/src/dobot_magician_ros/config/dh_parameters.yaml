@@ -1,0 +1,9 @@
+# Standard DH parameters transcribed from magician3D/DH参数-magician.jpg.
+# Lengths in the source table are millimetres; ROS uses metres below.
+dh_convention: standard
+units: m
+links:
+  - {name: joint_1, theta: q1, alpha: -1.5707963267948966, d: 0.0080, a: 0.0000}
+  - {name: joint_2, theta: q2, alpha: 0.0,                 d: 0.0000, a: 0.1350}
+  - {name: joint_3, theta: q3, alpha: 0.0,                 d: 0.0000, a: 0.1470}
+  - {name: joint_4, theta: q4, alpha: -1.5707963267948966, d: 0.0000, a: 0.0597}

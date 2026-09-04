@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <world name="suction_turn">
+    <gravity>0 0 -9.81</gravity>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <!-- Ambient fill keeps mesh surfaces readable instead of appearing uniformly black. -->
+    <scene>
+      <ambient>0.55 0.55 0.55 1</ambient>
+      <background>0.75 0.75 0.78 1</background>
+    </scene>
+    <light name="sun" type="directional">
+      <pose>0 0 10 0 0 0</pose><diffuse>1 1 1 1</diffuse><specular>0.35 0.35 0.35 1</specular><direction>-0.5 0.2 -1</direction>
+    </light>
+    <model name="ground">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>4 4 0.02</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>4 4 0.02</size>
+            </box>
+          </geometry>
+          <material>
+            <diffuse>0.45 0.47 0.50 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+    <model name="pick_box">
+      <pose>0.18 -0.15 0.03 0 0 0</pose>
+      <link name="link">
+          <collision name="collision">
+            <geometry>
+              <box>
+                <size>0.02 0.02 0.02</size>
+              </box>
+            </geometry>
+          </collision>
+          <visual name="visual">
+            <geometry>
+              <box>
+                <size>0.02 0.02 0.02</size>
+              </box>
+            </geometry>
+            <material>
+              <diffuse>0.78 0.78 0.80 1</diffuse>
+            </material>
+          </visual>
+          <inertial>
+            <mass>0.02</mass>
+            <inertia>
+              <ixx>1.33e-6</ixx><iyy>1.33e-6</iyy><izz>1.33e-6</izz>
+            </inertia>
+          </inertial>
+      </link>
+    </model>
+    <model name="place_table">
+    <static>true</static>
+    <!-- A zero-thickness box is invalid in Gazebo; use a 2 mm surface whose bottom is at z=0. -->
+    <pose>0.08 0.16 0.001 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+                <size>0.2 0.2 0.002</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+                <size>0.2 0.2 0.002</size>
+            </box>
+          </geometry>
+          <material>
+              <diffuse>1 0 0 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+  </world>
+</sdf>

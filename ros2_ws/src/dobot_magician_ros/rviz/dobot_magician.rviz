@@ -1,0 +1,62 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Enabled: true
+      Name: Ground Grid
+      Plane: XY
+      Plane Cell Count: 20
+      Cell Size: 0.05
+      Line Style:
+        Line Width: 0.03
+        Value: Lines
+      Color: 160; 160; 160
+      Alpha: 0.5
+    - Class: rviz_default_plugins/RobotModel
+      Enabled: true
+      Name: Dobot Magician Mesh
+      Description Source: Topic
+      Description Topic:
+        Value: /robot_description
+      Visual Enabled: true
+      Collision Enabled: false
+      TF Prefix: ""
+      Update Interval: 0
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Name: TF Frames
+      Frame Timeout: 15
+      Marker Scale: 0.25
+      Show Axes: true
+      Show Names: true
+      Show Arrows: true
+      Update Interval: 0
+      Frames:
+        All Enabled: true
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: base_link
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 0.75
+      Focal Point: 0; 0; 0.12
+      Pitch: 0.55
+      Yaw: 0.75
+      Target Frame: base_link
+      Value: Orbit (rviz)
+Window Geometry:
+  Height: 900
+  Width: 1400
+  X: 50
+  Y: 50
