@@ -15,13 +15,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /workspace/dobotmagician
 COPY . .
 
-RUN python3 -m pip install --no-cache-dir --break-system-packages --no-deps -e . \
+RUN python3 -m pip install --no-cache-dir --break-system-packages --no-build-isolation --no-deps -e . \
     && . /opt/ros/jazzy/setup.sh \
     && colcon --log-base ros2_ws/log build --symlink-install --base-paths ros2_ws/src \
        --build-base ros2_ws/build --install-base ros2_ws/install
 
 COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY docker/ros2-wrapper /usr/local/bin/ros2
+RUN chmod +x /entrypoint.sh /usr/local/bin/ros2
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["bash"]
