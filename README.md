@@ -82,6 +82,12 @@ the configured `models/` paths.
 Every training run now saves the fitted mixture and the GMR conditional mean
 before the final DMP/ProMP output in `models/.../intermediate/`.
 
+When `model.algorithm: compare`, it also writes `gmm_comparison.png`,
+`gmr_comparison.png`, `trajectory_comparison.png`, and a staged metrics table
+(`stage_metrics.csv` / `stage_metrics.md`). The staged table evaluates both the
+GMR output and the final movement-primitive output against the same normalized
+noisy demonstrations using Pearson correlation and RMSE.
+
 ## ROS 2 + Gazebo
 
 On Ubuntu 24.04 with ROS 2 Jazzy, build the new simulation package:

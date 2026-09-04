@@ -152,6 +152,36 @@ def plot_gmr_regression(
     plot_trajectories(demos, gmr_trajectory, None, output_path, title=title)
 
 
+def plot_gmm_comparison(
+    points: np.ndarray,
+    mixtures: dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]],
+    output_path: str | Path,
+    *,
+    title: str = "GMM layer comparison",
+) -> None:
+    """Compare fitted mixture component centers for all algorithms."""
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    dims = min(3, points.shape[1] - 1)
+    fig, axes = plt.subplots(dims, 1, figsize=(10, max(3.8, 2.7 * dims)), sharex=True)
+    if dims == 1:
+        axes = [axes]
+    colors = ["#d62728", "#1f77b4", "#2ca02c", "#9467bd"]
+    for dim, axis in enumerate(axes, start=1):
+        axis.scatter(points[:, 0], points[:, dim], s=5, alpha=0.10, color="0.55", label="demo points")
+        for (label, (means, _covariances, _weights)), color in zip(mixtures.items(), colors):
+            order = np.argsort(means[:, 0])
+            axis.plot(means[order, 0], means[order, dim], "o-", ms=3, lw=1.5, color=color, label=label)
+        axis.set_ylabel(_dimension_ylabel(_dimension_names(points.shape[1] - 1)[dim - 1]))
+        axis.grid(True, alpha=0.25)
+    axes[0].legend(loc="best", fontsize=8)
+    axes[-1].set_xlabel("normalized time")
+    fig.suptitle(title, fontsize=14, fontweight="bold")
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    fig.savefig(output, dpi=160)
+    plt.close(fig)
+
+
 def _add_component_ellipse(axis, mean, covariance, output_dim: int, color, weight: float) -> None:
     covariance_2d = np.asarray(covariance)[np.ix_([0, output_dim], [0, output_dim])]
     values, vectors = np.linalg.eigh(covariance_2d)

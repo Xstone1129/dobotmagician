@@ -12,6 +12,10 @@ model:
 plot:
   output_path: models/suction_arm/learned_trajectory.png
   comparison_output_path: models/suction_arm/trajectory_comparison.png
+  gmm_comparison_output_path: models/suction_arm/gmm_comparison.png
+  gmr_comparison_output_path: models/suction_arm/gmr_comparison.png
+  stage_metrics_csv: models/suction_arm/stage_metrics.csv
+  stage_metrics_md: models/suction_arm/stage_metrics.md
   intermediate_output_dir: models/suction_arm/intermediate
 
 gmm_gmr_dmp:
