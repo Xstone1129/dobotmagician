@@ -33,4 +33,4 @@ gmm_gmr_segmented_dmp:
 bgmm_gmr_promp:
   output_path: models/suction_arm/bgmm_gmr_promp.joblib
   plot_output_path: models/suction_arm/learned_trajectory_bgmm_gmr_promp.png
-  params: {n_time_steps: 180, n_components: 6, covariance_type: full, reg_covar: 0.000001, random_state: 7, promp_basis: 25, promp_basis_width: 0.05, ridge_lambda: 0.000001}
+  params: {n_time_steps: 180, n_components: 6, covariance_type: full, reg_covar: 0.000001, random_state: 7, promp_basis: 12, promp_basis_width: 0.08, ridge_lambda: 0.000001}
