@@ -186,7 +186,7 @@ def _write_stage_metric_tables(rows: list[dict[str, str]], csv_path: Path, md_pa
                   "RMSE X", "RMSE Y", "RMSE Z", "RMSE Gripper", "Model File", "Trajectory Plot"]
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     with csv_path.open("w", newline="", encoding="utf-8-sig") as fh:
-        writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        writer = csv.DictWriter(fh, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     lines = ["# Stage Metrics", "", "| Stage | Algorithm | Pearson Mean | RMSE Mean |", "|---|---|---:|---:|"]
@@ -242,7 +242,7 @@ def _write_metric_tables(rows: list[dict[str, str]], csv_path: Path, md_path: Pa
         "Trajectory Plot",
     ]
     with csv_path.open("w", newline="", encoding="utf-8-sig") as fh:
-        writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        writer = csv.DictWriter(fh, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
