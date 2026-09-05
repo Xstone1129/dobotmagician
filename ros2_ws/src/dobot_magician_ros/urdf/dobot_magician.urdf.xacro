@@ -75,7 +75,7 @@
   <!-- Gazebo creates/removes this fixed joint on attach / detach commands. -->
   <gazebo>
     <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint">
-      <parent_link>link_4</parent_link>
+      <parent_link>link_7</parent_link>
       <child_model>pick_box</child_model>
       <child_link>link</child_link>
       <detach_topic>/dobot_magician/detach</detach_topic>
