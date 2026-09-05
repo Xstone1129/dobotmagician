@@ -3,6 +3,8 @@
   <!-- Geometry and frames are migrated from magician3D/.../urdf/demo.urdf. -->
   <xacro:property name="pi_val" value="3.14159265"/>
   <xacro:property name="half_pi" value="1.570796325"/>
+  <!-- libsdformat renames the second collision when converting this fixed link. -->
+  <xacro:property name="cup_contact_gz_name" value="suction_cup_link_fixed_joint_lump__suction_contact_collision_collision_1"/>
   <material name="white"><color rgba="1 1 1 1"/></material>
   <material name="grey"><color rgba="0.9 0.9 0.9 1"/></material>
   <material name="black"><color rgba="0 0 0 1"/></material>
@@ -46,23 +48,37 @@
 
   <!-- Source joint_7: fixed suction cup with the source -1.57 rad X rotation. -->
   <joint name="joint_7" type="fixed">
-    <parent link="link_4"/><child link="link_7"/><origin xyz="-0.0328 -0.02 0" rpy="-1.57 0 0"/>
+    <parent link="link_4"/><child link="suction_cup_link"/><origin xyz="-0.0328 -0.02 0" rpy="-1.57 0 0"/>
   </joint>
-  <link name="link_7">
+  <!-- Keep the cup as a physical link for contact detection and attachment. -->
+  <gazebo reference="joint_7"><preserveFixedJoint>true</preserveFixedJoint></gazebo>
+  <link name="suction_cup_link">
     <visual><geometry><cylinder length="0.012" radius="0.020"/></geometry><material name="black"/></visual>
-    <collision><geometry><cylinder length="0.012" radius="0.028"/></geometry></collision>
+    <collision name="suction_body_collision"><origin xyz="0 0 0.0005"/><geometry><cylinder length="0.011" radius="0.020"/></geometry></collision>
+    <collision name="suction_contact_collision"><origin xyz="0 0 -0.0055"/><geometry><cylinder length="0.001" radius="0.020"/></geometry></collision>
     <inertial><origin xyz="0 0 -0.006"/><mass value="0.03"/><inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/></inertial>
   </link>
 
   <ros2_control name="DobotGazeboSystem" type="system">
     <hardware><plugin>gz_ros2_control/GazeboSimSystem</plugin></hardware>
     <joint name="joint_1"><command_interface name="position"/><state_interface name="position"><param name="initial_value">0.0</param></state_interface><state_interface name="velocity"/></joint>
-    <joint name="joint_2"><command_interface name="position"/><state_interface name="position"><param name="initial_value">0.0</param></state_interface><state_interface name="velocity"/></joint>
-    <joint name="joint_3"><command_interface name="position"/><state_interface name="position"><param name="initial_value">0.0</param></state_interface><state_interface name="velocity"/></joint>
+    <!-- Start inside the limit: DART can lock a velocity-controlled joint at its lower stop. -->
+    <joint name="joint_2"><command_interface name="position"/><state_interface name="position"><param name="initial_value">0.05</param></state_interface><state_interface name="velocity"/></joint>
+    <joint name="joint_3"><command_interface name="position"/><state_interface name="position"><param name="initial_value">0.05</param></state_interface><state_interface name="velocity"/></joint>
     <joint name="joint_4"><command_interface name="position"/><state_interface name="position"><param name="initial_value">0.0</param></state_interface><state_interface name="velocity"/></joint>
   </ros2_control>
   <gazebo>
+    <joint name="base_world_fixed" type="fixed">
+      <parent>world</parent><child>base_link</child>
+    </joint>
     <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin"><parameters>$(find dobot_magician_ros)/config/controllers.yaml</parameters></plugin>
+    <plugin filename="libdobot_suction.so" name="dobot::SuctionSystem">
+      <link_name>suction_cup_link</link_name>
+      <collision_name>${cup_contact_gz_name}</collision_name>
+      <target_model>pick_box</target_model>
+      <suction_topic>/dobot_magician/suction/enable</suction_topic>
+      <surface_z>-0.006</surface_z>
+    </plugin>
   </gazebo>
   <!-- Gazebo material overrides prevent mesh importers from falling back to white. -->
   <gazebo reference="base_link"><material>Gazebo/White</material></gazebo>
@@ -70,17 +86,13 @@
   <gazebo reference="link_2"><material>Gazebo/White</material></gazebo>
   <gazebo reference="link_3"><material>Gazebo/White</material></gazebo>
   <gazebo reference="link_4"><material>Gazebo/Grey</material></gazebo>
-  <gazebo reference="link_7"><material>Gazebo/Black</material></gazebo>
-  <gazebo reference="link_7"><mu1>0.9</mu1><mu2>0.9</mu2><kp>1000000</kp><kd>100</kd></gazebo>
-  <!-- Gazebo creates/removes this fixed joint on attach / detach commands. -->
-  <gazebo>
-    <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint">
-      <parent_link>link_7</parent_link>
-      <child_model>pick_box</child_model>
-      <child_link>link</child_link>
-      <detach_topic>/dobot_magician/detach</detach_topic>
-      <attach_topic>/dobot_magician/attach</attach_topic>
-      <output_topic>/dobot_magician/suction_state</output_topic>
-    </plugin>
+  <gazebo reference="suction_cup_link"><material>Gazebo/Black</material></gazebo>
+  <gazebo reference="suction_cup_link">
+    <mu1>0.9</mu1><mu2>0.9</mu2><kp>1000000</kp><kd>100</kd>
+    <sensor name="suction_contact" type="contact">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <contact><collision>${cup_contact_gz_name}</collision></contact>
+    </sensor>
   </gazebo>
 </robot>

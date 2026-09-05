@@ -130,7 +130,7 @@ source install/setup.bash
 ros2 launch dobot_magician_ros simulation.launch.py
 ```
 
-In a second terminal, send a slow reachable circular-turn demo:
+In a second terminal, run the contact-confirmed pick-and-place sequence:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
@@ -140,5 +140,10 @@ ros2 run dobot_magician_ros trajectory_player
 
 如果你在仓库根目录看到 `install/setup.bash`，它只是旧构建目录的快捷入口；请使用上面命令加载 `ros2_ws/install/setup.bash`。
 
-The tool frame is explicitly `suction_tip_link`; `joint_4` is commanded as
-`-(joint_2 + joint_3)` so the suction tool stays approximately vertical.
+The tool frame is `suction_cup_link`. The pick/place solver constrains
+`joint_4 = joint_3 - joint_2` to keep the cup vertical in the migrated URDF.
+The base is fixed to the world, and the ground surface is at z=0.
+The player waits for each controller action and confirms suction attachment
+and release before continuing. Timing follows the simulation clock.
+Simulation starts and returns to `(0, 0.05, 0.05, 0)` radians to avoid the
+DART servo lockup at the lower stops of joints 2 and 3. Joint limits remain unchanged.

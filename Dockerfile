@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-jazzy-ros-gz-sim ros-jazzy-ros-gz-bridge ros-jazzy-gz-ros2-control \
     ros-jazzy-controller-manager ros-jazzy-joint-state-broadcaster \
     ros-jazzy-joint-trajectory-controller ros-jazzy-joint-state-publisher-gui \
-    ros-jazzy-xacro \
+    ros-jazzy-xacro ros-jazzy-ros2controlcli \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace/dobotmagician

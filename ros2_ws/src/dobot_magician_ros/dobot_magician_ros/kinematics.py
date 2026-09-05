@@ -25,16 +25,33 @@ class DHParameters:
 DH = DHParameters()
 
 
-def inverse_kinematics(x: float, y: float, tip_z: float, dh: DHParameters = DH) -> tuple[float, float, float, float]:
-    """Solve the migrated URDF chain for a suction-tip position."""
+def inverse_kinematics(
+    x: float,
+    y: float,
+    tip_z: float,
+    dh: DHParameters = DH,
+    *,
+    vertical_tool: bool = False,
+) -> tuple[float, float, float, float]:
+    """Solve the migrated URDF chain, optionally keeping the cup face horizontal."""
     target = np.array([x, y, tip_z], dtype=float)
+
+    def residual(q: np.ndarray) -> np.ndarray:
+        position_error = _urdf_tip_position(q) - target
+        if vertical_tool:
+            # The two flipped URDF joint frames give this upright-tool constraint.
+            return np.append(position_error, 0.1 * (q[1] - q[2] + q[3]))
+        return position_error
+
     result = least_squares(
-        lambda q: _urdf_tip_position(q) - target,
+        residual,
         x0=np.array([math.atan2(y, x), 0.8, 0.8, 0.0]),
         bounds=(np.array([-math.pi, 0.0, 0.0, -0.5]), np.array([math.pi, math.pi / 2, math.pi / 2, 0.5])),
         max_nfev=2000,
     )
-    if not result.success or np.linalg.norm(result.fun) > 2e-4:
+    position_error = np.linalg.norm(_urdf_tip_position(result.x) - target)
+    angle_error = abs(result.x[1] - result.x[2] + result.x[3])
+    if not result.success or position_error > 2e-4 or (vertical_tool and angle_error > 1e-3):
         raise ValueError(f"Unreachable suction tip: ({x:.3f}, {y:.3f}, {tip_z:.3f})")
     return tuple(float(value) for value in result.x)
 

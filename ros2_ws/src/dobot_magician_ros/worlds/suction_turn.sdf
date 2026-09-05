@@ -5,6 +5,7 @@
     <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
     <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
     <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
     <!-- Ambient fill keeps mesh surfaces readable instead of appearing uniformly black. -->
     <scene>
       <ambient>0.55 0.55 0.55 1</ambient>
@@ -14,6 +15,7 @@
       <pose>0 0 10 0 0 0</pose><diffuse>1 1 1 1</diffuse><specular>0.35 0.35 0.35 1</specular><direction>-0.5 0.2 -1</direction>
     </light>
     <model name="ground">
+      <pose>0 0 -0.01 0 0 0</pose>
       <static>true</static>
       <link name="link">
         <collision name="collision">
@@ -36,7 +38,7 @@
       </link>
     </model>
     <model name="pick_box">
-      <pose>0.18 -0.15 0.03 0 0 0</pose>
+      <pose>0.18 -0.15 0.01 0 0 0</pose>
       <link name="link">
           <collision name="collision">
             <geometry>
@@ -71,14 +73,14 @@
         <collision name="collision">
           <geometry>
             <box>
-                <size>0.2 0.2 0.002</size>
+                <size>0.1 0.1 0.001</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-                <size>0.2 0.2 0.002</size>
+                <size>0.1 0.1 0.001</size>
             </box>
           </geometry>
           <material>

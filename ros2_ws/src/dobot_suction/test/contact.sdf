@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <world name="contact_test">
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
+    <model name="ground">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>2 2 0.02</size></box></geometry></collision>
+      </link>
+    </model>
+    <model name="dobot_magician">
+      <link name="suction_cup_link">
+        <pose>0 0 0.16 0 0 0</pose>
+        <inertial><mass>1</mass><inertia><ixx>0.01</ixx><iyy>0.01</iyy><izz>0.01</izz></inertia></inertial>
+        <collision name="suction_body_collision"><pose>0 0 0.0005 0 0 0</pose><geometry><cylinder><radius>0.02</radius><length>0.011</length></cylinder></geometry></collision>
+        <collision name="suction_contact_collision"><pose>0 0 -0.0055 0 0 0</pose><geometry><cylinder><radius>0.02</radius><length>0.001</length></cylinder></geometry></collision>
+        <sensor name="suction_contact" type="contact">
+          <always_on>true</always_on><update_rate>100</update_rate>
+          <contact><collision>suction_contact_collision</collision></contact>
+        </sensor>
+      </link>
+      <joint name="lift" type="prismatic">
+        <parent>world</parent><child>suction_cup_link</child>
+        <axis><xyz>0 0 1</xyz><limit><lower>-0.14</lower><upper>0.2</upper><effort>1000</effort><velocity>1</velocity></limit></axis>
+      </joint>
+      <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+        <joint_name>lift</joint_name><topic>/test/lift</topic>
+        <use_velocity_commands>true</use_velocity_commands><p_gain>5</p_gain>
+      </plugin>
+      <plugin filename="libdobot_suction.so" name="dobot::SuctionSystem"/>
+    </model>
+    <model name="pick_box">
+      <pose>0 0 0.02 0 0 0</pose>
+      <link name="link">
+        <inertial><mass>0.02</mass><inertia><ixx>0.00000133</ixx><iyy>0.00000133</iyy><izz>0.00000133</izz></inertia></inertial>
+        <collision name="collision"><geometry><box><size>0.02 0.02 0.02</size></box></geometry></collision>
+      </link>
+    </model>
+  </world>
+</sdf>
