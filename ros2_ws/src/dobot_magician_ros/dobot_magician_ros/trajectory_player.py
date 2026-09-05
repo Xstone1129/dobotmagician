@@ -14,12 +14,13 @@ class TrajectoryPlayer(Node):
         self.pub = self.create_publisher(JointTrajectory, '/arm_controller/joint_trajectory', 10)
         self.timer = self.create_timer(0.5, self.send_once)
         self.sent = False
-        self.attach_timer = self.create_timer(3.5, self.attach_box)
-        self.detach_timer = self.create_timer(6.5, self.detach_box)
-        self.stop_timer = self.create_timer(9.0, self.stop)
+        self.attach_timer = None
+        self.detach_timer = None
+        self.stop_timer = None
 
     def stop(self):
-        self.stop_timer.cancel()
+        if self.stop_timer is not None:
+            self.stop_timer.cancel()
         rclpy.shutdown()
 
     @staticmethod
@@ -30,17 +31,22 @@ class TrajectoryPlayer(Node):
         )
 
     def attach_box(self):
-        self.attach_timer.cancel()
+        if self.attach_timer is not None:
+            self.attach_timer.cancel()
         self._send_gazebo_command('/dobot_magician/attach')
         self.get_logger().info('Requested suction attachment for pick_box.')
 
     def detach_box(self):
-        self.detach_timer.cancel()
+        if self.detach_timer is not None:
+            self.detach_timer.cancel()
         self._send_gazebo_command('/dobot_magician/detach')
         self.get_logger().info('Requested suction release at place_table.')
 
     def send_once(self):
         if self.sent:
+            return
+        if self.pub.get_subscription_count() == 0:
+            self.get_logger().info('Waiting for arm_controller trajectory subscriber...')
             return
         # The targets are the actual SDF object coordinates. Values are link_7
         # frame positions, solved through the migrated URDF chain.
@@ -67,6 +73,11 @@ class TrajectoryPlayer(Node):
             f'Sent {len(msg.points)} pick-and-place waypoints for pick_box; duration={len(msg.points)} s.'
         )
         self.sent = True
+        # Start attachment/release timing only after the trajectory was accepted
+        # by an active controller, avoiding commands racing Gazebo startup.
+        self.attach_timer = self.create_timer(3.5, self.attach_box)
+        self.detach_timer = self.create_timer(6.5, self.detach_box)
+        self.stop_timer = self.create_timer(9.0, self.stop)
 
 
 def main():
