@@ -126,7 +126,9 @@ def sim_seconds(processes):
     code, output = processes.probe(['gz', 'topic', '-t', '/clock', '-e', '-n', '1'], 5)
     if code != 0:
         raise RuntimeError('No Gazebo clock samples received')
-    clock = text_format.Parse(output, Clock())
+    # A fast publisher can deliver another callback before `gz topic -n 1` exits.
+    record = next(part for part in output.split('\n\n') if part.strip())
+    clock = text_format.Parse(record, Clock())
     return clock.sim.sec + clock.sim.nsec * 1e-9
 
 
@@ -188,6 +190,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output-dir', type=Path, default=Path('/tmp/dobot-pick-place-check'))
     parser.add_argument('--minimum-lift', type=float, default=0.02)
+    parser.add_argument('--algorithm', choices=[
+        'gmm_gmr_dmp', 'inc_gmm_gmr_dmp', 'gmm_gmr_segmented_dmp', 'bgmm_gmr_promp',
+    ], help='Validate a learned model instead of the preset pick/place program')
+    parser.add_argument('--speed', type=float, default=0.5)
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
@@ -198,6 +204,7 @@ def main():
     processes = Processes(env)
     failures = []
     summary = {'gz_partition': env['GZ_PARTITION'], 'ros_domain_id': env['ROS_DOMAIN_ID'],
+               'algorithm': args.algorithm or 'preset',
                'minimum_lift_m': args.minimum_lift, 'target_table_xy_m': [0.08, 0.16],
                'maximum_table_xy_error_m': 0.04}
     started = time.monotonic()
@@ -220,19 +227,25 @@ def main():
                          'control_msgs/msg/JointTrajectoryControllerState'],
                         args.output_dir / 'controller-state.yaml')
         sim_start = sim_seconds(processes)
-        motion_deadline = time.monotonic() + 120
-        player = processes.start(['ros2', 'run', 'dobot_magician_ros', 'trajectory_player'],
+        wall_timeout = 180 if args.algorithm else 100
+        motion_deadline = time.monotonic() + wall_timeout + 20
+        command = (['python3', '-m', 'dobot_algorithms.scripts.play_algorithm',
+                    '--algorithm', args.algorithm, '--config', 'configs/suction_arm.yaml',
+                    '--speed', str(args.speed)] if args.algorithm else
+                   ['ros2', 'run', 'dobot_magician_ros', 'trajectory_player'])
+        player = processes.start(command,
                                  args.output_dir / 'trajectory-player.log')
         try:
-            summary['trajectory_player_exit_code'] = player.wait(timeout=100)
+            summary['trajectory_player_exit_code'] = player.wait(timeout=wall_timeout)
             if player.returncode != 0:
                 failures.append(f'Trajectory player exited with code {player.returncode}')
         except subprocess.TimeoutExpired:
             processes.stop(player)
-            failures.append('Trajectory player exceeded its 100 second wall timeout')
-        # A wall-time player can exit before an 8-second simulated trajectory ends.
+            failures.append(f'Trajectory player exceeded its {wall_timeout} second wall timeout')
+        # Observe settling after explicit release, even when the learned path ends at place.
         sim_end = sim_seconds(processes)
-        while sim_end - sim_start < 12 and time.monotonic() < motion_deadline:
+        settle_until = max(sim_start + 12, sim_end + 2)
+        while sim_end < settle_until and time.monotonic() < motion_deadline:
             time.sleep(1)
             sim_end = sim_seconds(processes)
         summary['observed_motion_sim_seconds'] = sim_end - sim_start

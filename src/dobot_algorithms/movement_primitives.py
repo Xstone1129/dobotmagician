@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from itertools import pairwise
 
 import numpy as np
 from sklearn.mixture import BayesianGaussianMixture, GaussianMixture
 
-from dobot_algorithms.primitives.dmp import DiscreteDMP
-from dobot_algorithms.gmr.regression import gmr
 from dobot_algorithms.gmm.incremental import IncrementalGMM
+from dobot_algorithms.gmr.regression import gmr
+from dobot_algorithms.primitives.dmp import DiscreteDMP
 from dobot_algorithms.trajectory_selection import normalize_demo, select_trajectory_for_place
 
 
@@ -27,6 +28,11 @@ class GMRPrimitiveConfig:
     n_segments: int = 4
     promp_basis: int = 25
     promp_basis_width: float = 0.08
+    mixture_max_iter: int = 100
+    mixture_n_init: int = 1
+    bgmm_mean_precision_prior: float = 1.0
+    bgmm_covariance_prior_scale: float = 1.0
+    promp_constrain_endpoints: bool = False
 
 
 class GMMGMRDMP:
@@ -40,7 +46,7 @@ class GMMGMRDMP:
         self.dmp_: DiscreteDMP | None = None
         self.trajectory_: np.ndarray | None = None
 
-    def fit(self, demos: list[np.ndarray]) -> "GMMGMRDMP":
+    def fit(self, demos: list[np.ndarray]) -> GMMGMRDMP:
         trajectories = self._normalize_demos(demos)
         joint_points = _joint_time_output_points(trajectories)
         n_components = min(self.config.n_components, len(joint_points))
@@ -49,6 +55,8 @@ class GMMGMRDMP:
             covariance_type=self.config.covariance_type,
             reg_covar=self.config.reg_covar,
             random_state=self.config.random_state,
+            max_iter=self.config.mixture_max_iter,
+            n_init=self.config.mixture_n_init,
         ).fit(joint_points)
         self.gmr_trajectory_ = _regress_with_gmr(
             self.gmm.means_,
@@ -125,7 +133,7 @@ class IncGMMGMRDMP(GMMGMRDMP):
         super().__init__(**kwargs)
         self.inc_gmm: IncrementalGMM | None = None
 
-    def fit(self, demos: list[np.ndarray]) -> "IncGMMGMRDMP":
+    def fit(self, demos: list[np.ndarray]) -> IncGMMGMRDMP:
         trajectories = self._normalize_demos(demos)
         self.inc_gmm = IncrementalGMM(lam=self.config.inc_lam)
         for point in _joint_time_output_points(trajectories):
@@ -161,7 +169,7 @@ class IncGMMGMRDMP(GMMGMRDMP):
 class GMMGMRSegmentedDMP(GMMGMRDMP):
     """GMM + GMR with a segmented DMP movement primitive."""
 
-    def fit(self, demos: list[np.ndarray]) -> "GMMGMRSegmentedDMP":
+    def fit(self, demos: list[np.ndarray]) -> GMMGMRSegmentedDMP:
         super().fit(demos)
         self.trajectory_ = _segmented_dmp_rollout(
             self.gmr_trajectory_,
@@ -180,7 +188,7 @@ class BGMMGMRProMP(GMMGMRDMP):
         self.bgmm: BayesianGaussianMixture | None = None
         self.promp_weights_: np.ndarray | None = None
 
-    def fit(self, demos: list[np.ndarray]) -> "BGMMGMRProMP":
+    def fit(self, demos: list[np.ndarray]) -> BGMMGMRProMP:
         trajectories = self._normalize_demos(demos)
         joint_points = _joint_time_output_points(trajectories)
         n_components = min(self.config.n_components, len(joint_points))
@@ -190,6 +198,10 @@ class BGMMGMRProMP(GMMGMRDMP):
             reg_covar=self.config.reg_covar,
             weight_concentration_prior_type="dirichlet_process",
             random_state=self.config.random_state,
+            max_iter=self.config.mixture_max_iter,
+            n_init=self.config.mixture_n_init,
+            mean_precision_prior=self.config.bgmm_mean_precision_prior,
+            covariance_prior=np.cov(joint_points.T) * self.config.bgmm_covariance_prior_scale,
         ).fit(joint_points)
         self.gmr_trajectory_ = _regress_with_gmr(
             self.bgmm.means_,
@@ -212,7 +224,13 @@ class BGMMGMRProMP(GMMGMRDMP):
         basis /= np.maximum(basis.sum(axis=1, keepdims=True), 1e-12)
         lhs = basis.T @ basis + self.config.ridge_lambda * np.eye(basis.shape[1])
         rhs = basis.T @ reference
-        self.promp_weights_ = np.linalg.solve(lhs, rhs)
+        if self.config.promp_constrain_endpoints:
+            constraints = basis[[0, -1]]
+            system = np.block([[lhs, constraints.T], [constraints, np.zeros((2, 2))]])
+            targets = np.vstack([rhs, reference[[0, -1]]])
+            self.promp_weights_ = np.linalg.solve(system, targets)[:len(centers)]
+        else:
+            self.promp_weights_ = np.linalg.solve(lhs, rhs)
         return basis @ self.promp_weights_
 
     def mixture_parameters(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -254,9 +272,10 @@ def _segmented_dmp_rollout(
     n_segments: int,
     config: GMRPrimitiveConfig,
 ) -> np.ndarray:
-    segments = np.array_split(reference, max(1, n_segments))
+    boundaries = np.linspace(0, len(reference) - 1, min(max(1, n_segments), len(reference) - 1) + 1, dtype=int)
     rollouts = []
-    for segment in segments:
+    for index, (start, end) in enumerate(pairwise(boundaries)):
+        segment = reference[start:end + 1]
         dmp = DiscreteDMP(
             n_time_steps=len(segment),
             n_basis=min(config.dmp_basis, max(2, len(segment) - 1)),
@@ -265,5 +284,6 @@ def _segmented_dmp_rollout(
             alpha_s=config.dmp_alpha_s,
             ridge_lambda=config.ridge_lambda,
         ).fit([segment])
-        rollouts.append(dmp.dynamic_rollout())
+        rollout = dmp.dynamic_rollout()
+        rollouts.append(rollout if index == 0 else rollout[1:])
     return np.vstack(rollouts)

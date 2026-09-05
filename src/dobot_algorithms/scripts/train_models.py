@@ -7,23 +7,22 @@ from pathlib import Path
 
 import numpy as np
 
+from dobot_algorithms.data_io import load_config, load_demonstrations, project_path, save_model
+from dobot_algorithms.evaluation import evaluate_reference_trajectory, format_trajectory_metrics
 from dobot_algorithms.movement_primitives import (
-    BGMMGMRProMP,
     GMMGMRDMP,
+    BGMMGMRProMP,
     GMMGMRSegmentedDMP,
     IncGMMGMRDMP,
 )
-from dobot_algorithms.data_io import load_config, load_demonstrations, project_path, save_model
-from dobot_algorithms.evaluation import evaluate_reference_trajectory, format_trajectory_metrics
 from dobot_algorithms.trajectory_selection import normalize_demo
 from dobot_algorithms.visualization import (
-    plot_gmm_components,
     plot_gmm_comparison,
+    plot_gmm_components,
     plot_gmr_regression,
     plot_model_comparison,
     plot_trajectories,
 )
-
 
 ALGORITHM_BUILDERS: dict[str, tuple[str, Callable[..., object]]] = {
     "gmm_gmr_dmp": ("GMM+GMR+DMP", GMMGMRDMP),
@@ -35,7 +34,7 @@ ALGORITHM_BUILDERS: dict[str, tuple[str, Callable[..., object]]] = {
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Learn GMM/GMR movement primitive models.")
-    parser.add_argument("--config", default="configs/default.yaml")
+    parser.add_argument("--config", default="configs/suction_arm.yaml")
     parser.add_argument(
         "--algorithm",
         choices=[*ALGORITHM_BUILDERS, "compare"],
@@ -112,8 +111,8 @@ def main() -> None:
     if algorithm == "compare":
         place_positions = config.get("plot", {}).get("place_positions", [[0.08, 0.16, 0.03]])
         comparison = {
-            label: model.trajectory_for_place(1, place_positions)
-            for label, model in trained_models.items()
+            ALGORITHM_BUILDERS[name][0]: model.trajectory_for_place(1, place_positions)
+            for name, model in trained_models.items()
         }
         output_path = plot_config.get("comparison_output_path", "models/trajectory_comparison.png")
         plot_model_comparison(
@@ -134,8 +133,8 @@ def main() -> None:
             title="GMR regression comparison",
         )
 
-    csv_path = project_path("models/algorithm_metrics.csv")
-    md_path = project_path("models/algorithm_metrics.md")
+    csv_path = project_path(plot_config.get("metrics_csv", "models/algorithm_metrics.csv"))
+    md_path = project_path(plot_config.get("metrics_md", "models/algorithm_metrics.md"))
     _write_metric_tables(metric_rows, csv_path, md_path)
     _write_stage_metric_tables(
         stage_metric_rows,
@@ -160,6 +159,7 @@ def _metrics_row(
         "Algorithm": label,
         "Pearson Mean": _format_number(metrics.mean_pearson),
         "RMSE Mean": _format_number(metrics.mean_rmse),
+        "XYZ RMSE mm": _format_number(metrics.position_rmse * 1000),
         "Model File": model_path,
         "Trajectory Plot": plot_path,
     }
@@ -181,7 +181,7 @@ def _stage_metrics_row(algorithm_name: str, label: str, stage: str, metrics) -> 
 def _write_stage_metric_tables(rows: list[dict[str, str]], csv_path: Path, md_path: Path) -> None:
     if not rows:
         return
-    fieldnames = ["Stage", "Algorithm ID", "Algorithm", "Pearson Mean", "RMSE Mean",
+    fieldnames = ["Stage", "Algorithm ID", "Algorithm", "Pearson Mean", "RMSE Mean", "XYZ RMSE mm",
                   "Pearson X", "Pearson Y", "Pearson Z", "Pearson Gripper",
                   "RMSE X", "RMSE Y", "RMSE Z", "RMSE Gripper", "Model File", "Trajectory Plot"]
     csv_path.parent.mkdir(parents=True, exist_ok=True)
@@ -189,8 +189,8 @@ def _write_stage_metric_tables(rows: list[dict[str, str]], csv_path: Path, md_pa
         writer = csv.DictWriter(fh, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
-    lines = ["# Stage Metrics", "", "| Stage | Algorithm | Pearson Mean | RMSE Mean |", "|---|---|---:|---:|"]
-    lines.extend(f"| {r['Stage']} | {r['Algorithm']} | {r['Pearson Mean']} | {r['RMSE Mean']} |" for r in rows)
+    lines = ["# Stage Metrics", "", "| Stage | Algorithm | XYZ RMSE (mm) | Gripper RMSE |", "|---|---|---:|---:|"]
+    lines.extend(f"| {r['Stage']} | {r['Algorithm']} | {r['XYZ RMSE mm']} | {r['RMSE Gripper']} |" for r in rows)
     md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -209,13 +209,13 @@ def _save_intermediate_figures(model, demos, algorithm_name: str, label: str, ou
         means,
         covariances,
         weights,
-        output_dir / f"{algorithm_name}_gmm.png",
+        output_dir / "gmm" / f"{algorithm_name}_gmm.png",
         title=f"{label}: fitted GMM components before GMR",
     )
     plot_gmr_regression(
         demos,
         model.gmr_trajectory_,
-        output_dir / f"{algorithm_name}_gmr.png",
+        output_dir / "gmr" / f"{algorithm_name}_gmr.png",
         title=f"{label}: GMR conditional mean before movement primitive",
     )
 
@@ -238,6 +238,7 @@ def _write_metric_tables(rows: list[dict[str, str]], csv_path: Path, md_path: Pa
         "RMSE Z",
         "RMSE Gripper",
         "RMSE Mean",
+        "XYZ RMSE mm",
         "Model File",
         "Trajectory Plot",
     ]
@@ -249,19 +250,21 @@ def _write_metric_tables(rows: list[dict[str, str]], csv_path: Path, md_path: Pa
     lines = [
         "# Algorithm Metrics",
         "",
-        "| Algorithm | Pearson Mean | RMSE Mean | Pearson X | Pearson Y | Pearson Z | Pearson Gripper | RMSE X | RMSE Y | RMSE Z | RMSE Gripper |",
+        "XYZ errors are in meters unless explicitly labeled mm. Gripper error is dimensionless.",
+        "",
+        "| Algorithm | XYZ RMSE (mm) | Pearson X | Pearson Y | Pearson Z | Pearson Gripper | RMSE X | RMSE Y | RMSE Z | RMSE Gripper |",
         "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for row in rows:
         lines.append(
-            "| {Algorithm} | {Pearson Mean} | {RMSE Mean} | {Pearson X} | {Pearson Y} | "
+            "| {Algorithm} | {XYZ RMSE mm} | {Pearson X} | {Pearson Y} | "
             "{Pearson Z} | {Pearson Gripper} | {RMSE X} | {RMSE Y} | {RMSE Z} | "
             "{RMSE Gripper} |".format(**row)
         )
     lines.extend(
         [
             "",
-            "Generated by `python -m dobot_algorithms.scripts.train_models --config configs/default.yaml`.",
+            "Generated by `dobot_algorithms.scripts.train_models` for the model paths in the CSV.",
             "",
         ]
     )
@@ -269,7 +272,7 @@ def _write_metric_tables(rows: list[dict[str, str]], csv_path: Path, md_path: Pa
 
 
 def _format_number(value: float) -> str:
-    return "nan" if value != value else f"{value:.4f}"
+    return "nan" if np.isnan(value) else f"{value:.4f}"
 
 
 if __name__ == "__main__":

@@ -46,6 +46,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+.ruff_cache/
 
 # Translations
 *.mo
@@ -192,3 +193,6 @@ reports/evidence/coppeliasim/
 # Generated report archives and temporary exports.
 /reports/paper_*.zip
 /reports/images_to_insert.xml
+
+# Temporary simulator validation runs.
+/models/docker_validation_*/

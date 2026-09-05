@@ -3,9 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from scipy.integrate import solve_ivp
+from scipy.interpolate import CubicSpline
 
-from dobot_algorithms.trajectory_selection import normalize_demo
 from dobot_algorithms.primitives.base import PrimitiveBase
+from dobot_algorithms.trajectory_selection import normalize_demo
 
 
 @dataclass(frozen=True)
@@ -45,6 +47,7 @@ class DiscreteDMP(PrimitiveBase):
         self.demo_mean_: np.ndarray | None = None
         self.n_dims: int | None = None
         self.zero_displacement_: np.ndarray | None = None
+        self.initial_velocity_: np.ndarray | None = None
 
     def fit(self, trajectories: list[np.ndarray]) -> DiscreteDMP:
         if not trajectories:
@@ -63,29 +66,32 @@ class DiscreteDMP(PrimitiveBase):
 
     def dynamic_rollout(self) -> np.ndarray:
         self._require_fit()
-        phase, basis = self._basis()
-        forcing = self._forcing(phase, basis)
         goal_delta = self.goal_ - self.y0_
         safe_goal_delta = np.where(np.abs(goal_delta) < 1e-6, 1.0, goal_delta)
         dt = 1.0 / max(self.config.n_time_steps - 1, 1)
+        initial_velocity = getattr(self, "initial_velocity_", None)
+        if initial_velocity is None:
+            initial_velocity = np.zeros_like(self.y0_)
 
-        y = self.y0_.copy()
-        dy = np.zeros_like(y)
-        trajectory = np.empty((self.config.n_time_steps, self.n_dims), dtype=float)
-        for i in range(self.config.n_time_steps):
-            trajectory[i] = y
-            ddy = (
-                self.config.alpha_z * (self.config.beta_z * (self.goal_ - y) - dy)
-                + forcing[i] * safe_goal_delta
+        def dynamics(t, state):
+            phase, basis = self._basis(np.array([t]))
+            forcing = self._forcing(phase, basis)[0]
+            y, velocity = np.split(state, 2)
+            acceleration = (
+                self.config.alpha_z * (self.config.beta_z * (self.goal_ - y) - velocity)
+                + forcing * safe_goal_delta
             )
-            dy = dy + ddy * dt
-            y = y + dy * dt
-        trajectory = self._smooth_goal_transition(trajectory)
-        # A DMP's spatial scaling is undefined when start and goal coincide.
-        # Preserve the learned shape for those dimensions instead of integrating
-        # an arbitrarily scaled forcing term that can create overshoot.
-        if self.zero_displacement_ is not None and np.any(self.zero_displacement_):
-            trajectory[:, self.zero_displacement_] = self.demo_mean_[:, self.zero_displacement_]
+            return np.concatenate([velocity, acceleration])
+
+        # Unit forcing scale is well-defined for closed paths; do not bypass the ODE.
+        solution = solve_ivp(
+            dynamics, (0.0, 1.0), np.concatenate([self.y0_, initial_velocity]),
+            t_eval=np.linspace(0.0, 1.0, self.config.n_time_steps),
+            max_step=dt, rtol=1e-7, atol=1e-9,
+        )
+        if not solution.success:
+            raise RuntimeError(f"DMP integration failed: {solution.message}")
+        trajectory = solution.y[:self.n_dims].T.copy()
         if self.n_dims is not None and self.n_dims >= 4:
             trajectory[:, 3] = np.clip(trajectory[:, 3], 0.0, 1.0)
         return trajectory
@@ -94,21 +100,13 @@ class DiscreteDMP(PrimitiveBase):
         """PrimitiveBase-compatible name for dynamic_rollout."""
         return self.dynamic_rollout()
 
-    def _smooth_goal_transition(self, trajectory: np.ndarray, window: int = 8) -> np.ndarray:
-        """Blend the tail to the goal instead of snapping only the final point."""
-        if len(trajectory) <= 1:
-            return trajectory
-        window = min(window, len(trajectory))
-        weights = np.linspace(0.0, 1.0, window)[:, None]
-        trajectory[-window:] = (1.0 - weights) * trajectory[-window:] + weights * self.goal_
-        trajectory[-1] = self.goal_
-        return trajectory
-
     def _fit_forcing_terms(self, trajectory: np.ndarray) -> np.ndarray:
         phase, basis = self._basis()
-        dt = 1.0 / max(self.config.n_time_steps - 1, 1)
-        dy = np.gradient(trajectory, dt, axis=0)
-        ddy = np.gradient(dy, dt, axis=0)
+        times = np.linspace(0.0, 1.0, len(trajectory))
+        spline = CubicSpline(times, trajectory, axis=0)
+        dy = spline(times, 1)
+        ddy = spline(times, 2)
+        self.initial_velocity_ = dy[0].copy()
 
         goal_delta = self.goal_ - self.y0_
         safe_goal_delta = np.where(np.abs(goal_delta) < 1e-6, 1.0, goal_delta)
@@ -125,8 +123,9 @@ class DiscreteDMP(PrimitiveBase):
         weighted = basis @ self.weights_.T
         return weighted * phase[:, None]
 
-    def _basis(self) -> tuple[np.ndarray, np.ndarray]:
-        t = np.linspace(0.0, 1.0, self.config.n_time_steps)
+    def _basis(self, t: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray]:
+        if t is None:
+            t = np.linspace(0.0, 1.0, self.config.n_time_steps)
         phase = np.exp(-self.config.alpha_s * t)
         centers = np.exp(-self.config.alpha_s * np.linspace(0.0, 1.0, self.config.n_basis))
         widths = np.full(self.config.n_basis, self.config.n_basis**1.5 / max(self.config.alpha_s, 1e-6))

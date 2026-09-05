@@ -20,7 +20,12 @@ class TrajectoryMetrics:
 
     @property
     def mean_rmse(self) -> float:
+        """Legacy mixed-unit summary; do not use it to select tracking parameters."""
         return float(np.mean(self.rmse))
+
+    @property
+    def position_rmse(self) -> float:
+        return float(np.sqrt(np.mean(self.rmse[:3] ** 2)))
 
 
 def evaluate_reference_trajectory(

@@ -97,10 +97,12 @@ def plot_model_comparison(
         axis.set_ylabel(_dimension_ylabel(dim_names[dim]))
         axis.grid(True, alpha=0.25)
 
-    axes[0].legend(loc="best")
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 0.95),
+               ncol=2, fontsize=9, frameon=False)
     axes[-1].set_xlabel("normalized time")
     fig.suptitle(title, fontsize=14, fontweight="bold")
-    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    fig.tight_layout(rect=(0, 0, 1, 0.91))
     fig.savefig(output, dpi=160)
     plt.close(fig)
 

@@ -1,0 +1,5 @@
+algorithm,cv_xyz_rmse_mm,held_out_xyz_rmse_mm,held_out_z_rmse_mm,held_out_contact_xyz_rmse_mm,held_out_endpoint_max_mm,held_out_gripper_rmse
+gmm_gmr_dmp,4.047103,4.147105,4.662663,5.864065,1.431851,0.015725
+inc_gmm_gmr_dmp,3.916926,4.070659,4.312714,5.673492,2.313861,0.015732
+gmm_gmr_segmented_dmp,3.091604,3.211736,1.890641,3.570089,2.699210,0.002013
+bgmm_gmr_promp,3.949957,3.874667,3.817797,4.913576,0.000000,0.021008

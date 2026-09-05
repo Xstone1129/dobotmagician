@@ -10,27 +10,74 @@ model:
   active_algorithm: gmm_gmr_dmp
 
 plot:
-  output_path: models/suction_arm/learned_trajectory.png
-  comparison_output_path: models/suction_arm/trajectory_comparison.png
-  gmm_comparison_output_path: models/suction_arm/gmm_comparison.png
-  gmr_comparison_output_path: models/suction_arm/gmr_comparison.png
-  stage_metrics_csv: models/suction_arm/stage_metrics.csv
-  stage_metrics_md: models/suction_arm/stage_metrics.md
-  intermediate_output_dir: models/suction_arm/intermediate
+  output_path: models/suction_arm/plots/trajectories/learned_trajectory.png
+  comparison_output_path: models/suction_arm/plots/trajectories/trajectory_comparison.png
+  gmm_comparison_output_path: models/suction_arm/plots/gmm/gmm_comparison.png
+  gmr_comparison_output_path: models/suction_arm/plots/gmr/gmr_comparison.png
+  stage_metrics_csv: models/suction_arm/metrics/stage_metrics.csv
+  stage_metrics_md: models/suction_arm/metrics/stage_metrics.md
+  intermediate_output_dir: models/suction_arm/plots
+  metrics_csv: models/suction_arm/metrics/algorithm_metrics.csv
+  metrics_md: models/suction_arm/metrics/algorithm_metrics.md
 
 gmm_gmr_dmp:
   output_path: models/suction_arm/gmm_gmr_dmp.joblib
-  plot_output_path: models/suction_arm/learned_trajectory_gmm_gmr_dmp.png
-  params: {n_time_steps: 180, n_components: 8, covariance_type: full, reg_covar: 0.000001, random_state: 7, dmp_basis: 30, dmp_alpha_z: 25.0, dmp_beta_z: 6.25, dmp_alpha_s: 1.0, ridge_lambda: 0.000001}
+  plot_output_path: models/suction_arm/plots/trajectories/learned_trajectory_gmm_gmr_dmp.png
+  params:
+    n_time_steps: 180
+    n_components: 40
+    covariance_type: full
+    reg_covar: 0.000001
+    random_state: 7
+    mixture_max_iter: 1000
+    mixture_n_init: 2
+    dmp_basis: 140
+    dmp_alpha_z: 50.0
+    dmp_beta_z: 12.5
+    dmp_alpha_s: 1.0
+    ridge_lambda: 0.000001
 inc_gmm_gmr_dmp:
   output_path: models/suction_arm/inc_gmm_gmr_dmp.joblib
-  plot_output_path: models/suction_arm/learned_trajectory_inc_gmm_gmr_dmp.png
-  params: {n_time_steps: 180, inc_lam: 1.0, dmp_basis: 80, dmp_alpha_z: 25.0, dmp_beta_z: 6.25, dmp_alpha_s: 1.0, ridge_lambda: 0.000001}
+  plot_output_path: models/suction_arm/plots/trajectories/learned_trajectory_inc_gmm_gmr_dmp.png
+  params:
+    n_time_steps: 180
+    inc_lam: 0.05
+    dmp_basis: 140
+    dmp_alpha_z: 50.0
+    dmp_beta_z: 12.5
+    dmp_alpha_s: 1.0
+    ridge_lambda: 0.000001
 gmm_gmr_segmented_dmp:
   output_path: models/suction_arm/gmm_gmr_segmented_dmp.joblib
-  plot_output_path: models/suction_arm/learned_trajectory_gmm_gmr_segmented_dmp.png
-  params: {n_time_steps: 180, n_components: 8, covariance_type: full, reg_covar: 0.000001, random_state: 7, dmp_basis: 50, dmp_alpha_z: 25.0, dmp_beta_z: 6.25, dmp_alpha_s: 4.0, ridge_lambda: 0.000001, n_segments: 4}
+  plot_output_path: models/suction_arm/plots/trajectories/learned_trajectory_gmm_gmr_segmented_dmp.png
+  params:
+    n_time_steps: 180
+    n_components: 40
+    covariance_type: full
+    reg_covar: 0.000001
+    random_state: 7
+    mixture_max_iter: 1000
+    mixture_n_init: 2
+    dmp_basis: 50
+    dmp_alpha_z: 50.0
+    dmp_beta_z: 12.5
+    dmp_alpha_s: 1.0
+    ridge_lambda: 0.000001
+    n_segments: 4
 bgmm_gmr_promp:
   output_path: models/suction_arm/bgmm_gmr_promp.joblib
-  plot_output_path: models/suction_arm/learned_trajectory_bgmm_gmr_promp.png
-  params: {n_time_steps: 180, n_components: 6, covariance_type: full, reg_covar: 0.000001, random_state: 7, promp_basis: 12, promp_basis_width: 0.08, ridge_lambda: 0.000001}
+  plot_output_path: models/suction_arm/plots/trajectories/learned_trajectory_bgmm_gmr_promp.png
+  params:
+    n_time_steps: 180
+    n_components: 32
+    covariance_type: full
+    reg_covar: 0.000001
+    random_state: 7
+    mixture_max_iter: 1000
+    mixture_n_init: 2
+    bgmm_mean_precision_prior: 0.001
+    bgmm_covariance_prior_scale: 0.01
+    promp_basis: 50
+    promp_basis_width: 0.02
+    promp_constrain_endpoints: true
+    ridge_lambda: 0.000001

@@ -1,13 +1,13 @@
 import numpy as np
 import pytest
 
+from dobot_algorithms.evaluation import evaluate_reference_trajectory, format_trajectory_metrics
 from dobot_algorithms.movement_primitives import (
-    BGMMGMRProMP,
     GMMGMRDMP,
+    BGMMGMRProMP,
     GMMGMRSegmentedDMP,
     IncGMMGMRDMP,
 )
-from dobot_algorithms.evaluation import evaluate_reference_trajectory, format_trajectory_metrics
 from dobot_algorithms.primitives.dmp import DiscreteDMP
 
 
@@ -75,9 +75,29 @@ def test_trajectory_metrics_handle_constant_dimensions():
     assert "RMSE" in summary
 
 
-def test_dmp_preserves_zero_displacement_dimension_without_overshoot():
-    phase = np.linspace(0.0, 1.0, 40)
-    reference = np.column_stack([0.1 + 0.03 * np.sin(2 * np.pi * phase), phase])
-    rollout = DiscreteDMP(n_time_steps=40, n_basis=12).fit([reference]).dynamic_rollout()
+def test_position_metric_does_not_mix_in_gripper_units():
+    demo = np.zeros((20, 4))
+    prediction = demo.copy()
+    prediction[:, 3] = 1.0
+    metrics = evaluate_reference_trajectory([demo], prediction)
+    assert metrics.position_rmse == 0.0
+    assert metrics.rmse[3] == 1.0
 
-    np.testing.assert_allclose(rollout[:, 0], reference[:, 0])
+
+def test_closed_dmp_tracks_shape_and_responds_to_forcing_weights():
+    phase = np.linspace(0.0, 1.0, 180)
+    reference = np.column_stack([0.1 + 0.03 * np.sin(2 * np.pi * phase), phase])
+    model = DiscreteDMP(n_time_steps=180, n_basis=50, alpha_s=1.0).fit([reference])
+    rollout = model.dynamic_rollout()
+    assert np.sqrt(np.mean((rollout[:, 0] - reference[:, 0]) ** 2)) < 0.003
+    model.weights_[:] = 0
+    assert np.max(np.abs(model.dynamic_rollout()[:, 0] - rollout[:, 0])) > 0.02
+
+
+def test_promp_constrained_reconstruction_preserves_endpoints():
+    demos, _ = _palletizing_demos()
+    model = BGMMGMRProMP(
+        n_time_steps=80, n_components=3, random_state=1,
+        promp_basis=25, promp_constrain_endpoints=True,
+    ).fit(demos)
+    np.testing.assert_allclose(model.mean_trajectory()[[0, -1]], demos[0][[0, -1]], atol=1e-10)

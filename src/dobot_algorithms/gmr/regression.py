@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+from scipy.special import logsumexp
 
 
 def gmr(
@@ -31,22 +32,19 @@ def gmr(
     sigma_xx = covariances[:, :input_dim, :input_dim]
     sigma_yx = covariances[:, input_dim:, :input_dim]
 
-    predictions = []
-    for x in x_query:
-        weights = np.empty(n_components, dtype=float)
-        conditional_means = []
-        for k in range(n_components):
-            sigma_xx_reg = sigma_xx[k] + 1e-6 * np.eye(input_dim)
-            inv_sigma_xx = np.linalg.inv(sigma_xx_reg)
-            diff = x - mu_x[k]
-            weights[k] = priors[k] * np.exp(-0.5 * diff @ inv_sigma_xx @ diff)
-            conditional_means.append(mu_y[k] + sigma_yx[k] @ inv_sigma_xx @ diff)
-
-        weights /= np.maximum(np.sum(weights), 1e-12)
-        prediction = np.sum(
-            [weights[k] * conditional_means[k] for k in range(n_components)],
-            axis=0,
-        )
-        predictions.append(prediction)
-
-    return np.asarray(predictions)
+    log_weights = np.empty((len(x_query), n_components))
+    conditional_means = np.empty((len(x_query), n_components, output_dim))
+    for k in range(n_components):
+        covariance = sigma_xx[k] + 1e-6 * np.eye(input_dim)
+        diff = x_query - mu_x[k]
+        solved = np.linalg.solve(covariance, diff.T).T
+        sign, log_det = np.linalg.slogdet(covariance)
+        if sign <= 0:
+            raise ValueError("Input covariance must be positive definite.")
+        # Responsibilities require the full Gaussian density, including its volume.
+        log_weights[:, k] = (
+            np.log(priors[k]) if priors[k] > 0 else -np.inf
+        ) - 0.5 * (np.sum(diff * solved, axis=1) + log_det + input_dim * np.log(2 * np.pi))
+        conditional_means[:, k] = mu_y[k] + solved @ sigma_yx[k].T
+    weights = np.exp(log_weights - logsumexp(log_weights, axis=1, keepdims=True))
+    return np.sum(weights[:, :, None] * conditional_means, axis=1)
